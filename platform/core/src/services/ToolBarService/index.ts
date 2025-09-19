@@ -1,3 +1,3 @@
-import ToolbarService, { TOOLBAR_SECTIONS } from './ToolbarService';
+import ToolbarService from './ToolbarService';
+
 export default ToolbarService;
-export { TOOLBAR_SECTIONS };

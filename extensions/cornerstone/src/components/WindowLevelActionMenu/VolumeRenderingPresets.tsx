@@ -1,13 +1,15 @@
 import { AllInOneMenu } from '@ohif/ui-next';
 import { Icons } from '@ohif/ui-next';
 import React, { ReactElement } from 'react';
+import { VolumeRenderingPresetsProps } from '../../types/ViewportPresets';
 import { VolumeRenderingPresetsContent } from './VolumeRenderingPresetsContent';
-import { useSystem } from '@ohif/core';
-import { useViewportRendering } from '../../hooks/useViewportRendering';
 
-export function VolumeRenderingPresets({ viewportId }: { viewportId?: string } = {}): ReactElement {
-  const { volumeRenderingPresets } = useViewportRendering(viewportId);
-  const { servicesManager } = useSystem();
+export function VolumeRenderingPresets({
+  viewportId,
+  servicesManager,
+  commandsManager,
+  volumeRenderingPresets,
+}: VolumeRenderingPresetsProps): ReactElement {
   const { uiDialogService } = servicesManager.services;
 
   const onClickPresets = () => {
@@ -19,6 +21,7 @@ export function VolumeRenderingPresets({ viewportId }: { viewportId?: string } =
       contentProps: {
         presets: volumeRenderingPresets,
         viewportId,
+        commandsManager,
       },
     });
   };

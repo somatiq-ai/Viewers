@@ -15,6 +15,7 @@ import onDropHandlerCustomization from './customizations/onDropHandlerCustomizat
 import loadingIndicatorProgressCustomization from './customizations/loadingIndicatorProgressCustomization';
 import loadingIndicatorTotalPercentCustomization from './customizations/loadingIndicatorTotalPercentCustomization';
 import progressLoadingBarCustomization from './customizations/progressLoadingBarCustomization';
+import viewportActionCornersCustomization from './customizations/viewportActionCornersCustomization';
 import labellingFlowCustomization from './customizations/labellingFlowCustomization';
 import viewportNotificationCustomization from './customizations/notificationCustomization';
 import aboutModalCustomization from './customizations/aboutModalCustomization';
@@ -22,7 +23,6 @@ import userPreferencesCustomization from './customizations/userPreferencesCustom
 import reportDialogCustomization from './customizations/reportDialogCustomization';
 import hotkeyBindingsCustomization from './customizations/hotkeyBindingsCustomization';
 import onboardingCustomization from './customizations/onboardingCustomization';
-import instanceSortingCriteriaCustomization from './customizations/instanceSortingCriteriaCustomization';
 /**
  *
  * Note: this is an example of how the customization module can be used
@@ -62,6 +62,7 @@ export default function getCustomizationModule({ servicesManager, extensionManag
         ...loadingIndicatorProgressCustomization,
         ...loadingIndicatorTotalPercentCustomization,
         ...progressLoadingBarCustomization,
+        ...viewportActionCornersCustomization,
         ...labellingFlowCustomization,
         ...contextMenuUICustomization,
         ...viewportNotificationCustomization,
@@ -70,7 +71,6 @@ export default function getCustomizationModule({ servicesManager, extensionManag
         ...reportDialogCustomization,
         ...hotkeyBindingsCustomization,
         ...onboardingCustomization,
-        ...instanceSortingCriteriaCustomization,
       },
     },
   ];

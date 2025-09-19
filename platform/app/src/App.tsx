@@ -13,7 +13,6 @@ import {
   HotkeysManager,
   ServiceProvidersManager,
   SystemContextProvider,
-  ViewportRefsProvider,
 } from '@ohif/core';
 import {
   ThemeWrapper as ThemeWrapperNext,
@@ -35,7 +34,6 @@ import createRoutes from './routes';
 import appInit from './appInit.js';
 import OpenIdConnectRoutes from './utils/OpenIdConnectRoutes';
 import { ShepherdJourneyProvider } from 'react-shepherd';
-import './App.css';
 
 let commandsManager: CommandsManager,
   extensionManager: ExtensionManager,
@@ -114,7 +112,6 @@ function App({
     [I18nextProvider, { i18n }],
     [ThemeWrapperNext],
     [SystemContextProvider, { commandsManager, extensionManager, hotkeysManager, servicesManager }],
-    [ViewportRefsProvider],
     [ViewportGridProvider, { service: viewportGridService }],
     [ViewportDialogProvider, { service: uiViewportDialogService }],
     [CineProvider, { service: cineService }],

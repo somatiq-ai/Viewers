@@ -33,12 +33,10 @@ const getPanelModule = ({ commandsManager, servicesManager, extensionManager }: 
   };
 
   const wrappedPanelSegmentationWithTools = ({ configuration }) => {
-    const { toolbarService } = servicesManager.services;
-
     return (
       <>
         <Toolbox
-          buttonSectionId={toolbarService.sections.segmentationToolbox}
+          buttonSectionId="segmentationToolbox"
           title="Segmentation Tools"
         />
         <PanelSegmentation

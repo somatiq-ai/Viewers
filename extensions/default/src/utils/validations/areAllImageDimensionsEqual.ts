@@ -1,6 +1,4 @@
-import { utils } from '@ohif/core';
-
-const { toNumber } = utils;
+import toNumber from '@ohif/core/src/utils/toNumber';
 
 /**
  * Check if the frames in a series has different dimensions

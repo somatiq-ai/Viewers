@@ -1,3 +1,5 @@
+import { CommandsManager } from '@ohif/core';
+
 export type ViewportPreset = {
   name: string;
   gradientOpacity: string;
@@ -13,6 +15,8 @@ export type ViewportPreset = {
 
 export type VolumeRenderingPresetsProps = {
   viewportId: string;
+  servicesManager: AppTypes.ServicesManager;
+  commandsManager: CommandsManager;
   volumeRenderingPresets: ViewportPreset[];
 };
 
@@ -20,10 +24,13 @@ export type VolumeRenderingPresetsContentProps = {
   presets: ViewportPreset[];
   onClose: () => void;
   viewportId: string;
+  commandsManager: CommandsManager;
 };
 
 export type VolumeRenderingOptionsProps = {
   viewportId: string;
+  commandsManager: CommandsManager;
+  servicesManager: AppTypes.ServicesManager;
   volumeRenderingQualityRange: VolumeRenderingQualityRange;
 };
 
@@ -35,19 +42,27 @@ export type VolumeRenderingQualityRange = {
 
 export type VolumeRenderingQualityProps = {
   viewportId: string;
+  commandsManager: CommandsManager;
+  servicesManager: AppTypes.ServicesManager;
   volumeRenderingQualityRange: VolumeRenderingQualityRange;
 };
 
 export type VolumeShiftProps = {
   viewportId: string;
+  commandsManager: CommandsManager;
+  servicesManager: AppTypes.ServicesManager;
 };
 
 export type VolumeShadeProps = {
   viewportId: string;
+  commandsManager: CommandsManager;
+  servicesManager: AppTypes.ServicesManager;
   onClickShade?: (bool: boolean) => void;
 };
 
 export type VolumeLightingProps = {
   viewportId: string;
+  commandsManager: CommandsManager;
+  servicesManager: AppTypes.ServicesManager;
   hasShade: boolean;
 };

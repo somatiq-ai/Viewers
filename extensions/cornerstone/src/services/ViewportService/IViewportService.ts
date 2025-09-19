@@ -35,8 +35,9 @@ export interface IViewportService {
   /**
    * It creates  a resize observer for the viewport element, and observes
    * the element for resizing events
+   * @param {*} elementRef
    */
-  resize(): void;
+  resize(isGridResize: boolean): void;
   /**
    * Removes the viewport from cornerstone, and destroys the rendering engine
    */

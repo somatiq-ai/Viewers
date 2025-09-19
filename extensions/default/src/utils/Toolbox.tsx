@@ -27,6 +27,7 @@ export function Toolbox({ buttonSectionId, title }: { buttonSectionId: string; t
   const [showConfig, setShowConfig] = useState(false);
 
   const { toolbarButtons: toolboxSections, onInteraction } = useToolbar({
+    servicesManager,
     buttonSection: buttonSectionId,
   });
 

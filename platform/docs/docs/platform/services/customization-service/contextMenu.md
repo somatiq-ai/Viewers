@@ -1,8 +1,6 @@
 ---
 sidebar_label: Context Menu
 sidebar_position: 3
-title: Context Menu Customization
-summary: Documentation for customizing OHIF's context menus, including defining menu structures and click interactions specific to different contexts like the Cornerstone viewport.
 ---
 
 # Context Menu

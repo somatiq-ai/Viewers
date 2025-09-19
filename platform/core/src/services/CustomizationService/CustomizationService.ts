@@ -131,11 +131,7 @@ export default class CustomizationService extends PubSubService {
       }
     });
 
-    // Only add references for the configuration once.
-    if (!this.configuration?._hasBeenAdded) {
-      this.addReferences(this.configuration);
-      Object.defineProperty(this.configuration, '_hasBeenAdded', { value: true, writable: false });
-    }
+    this.addReferences(this.configuration);
   }
 
   public onModeEnter(): void {
@@ -165,11 +161,10 @@ export default class CustomizationService extends PubSubService {
    * @param customizationId - The ID of the customization to retrieve.
    * @param scope - (Optional) The scope to retrieve from: 'global', 'mode', or 'default'.
    *                 If not specified, it retrieves based on priority: global > mode > default.
-   * @returns The requested customization, or undefined if not found
+   * @returns The requested customization.
    */
-  public getCustomization(customizationId: string): Customization | undefined {
+  public getCustomization(customizationId: string): Customization {
     const transformed = this.transformedCustomizations.get(customizationId);
-
     if (transformed) {
       return transformed;
     }
@@ -325,7 +320,7 @@ export default class CustomizationService extends PubSubService {
     this.modeCustomizations.set(customizationId, result);
 
     this.transformedCustomizations.clear();
-    this._broadcastEvent(this.EVENTS.MODE_CUSTOMIZATION_MODIFIED, {
+    this._broadcastEvent(this.EVENTS.CUSTOMIZATION_MODIFIED, {
       buttons: this.modeCustomizations,
       button: this.modeCustomizations.get(customizationId),
     });
@@ -339,7 +334,7 @@ export default class CustomizationService extends PubSubService {
     this.globalCustomizations.set(id, this._update(sourceCustomization, value));
 
     this.transformedCustomizations.clear();
-    this._broadcastEvent(this.EVENTS.GLOBAL_CUSTOMIZATION_MODIFIED, {
+    this._broadcastEvent(this.EVENTS.DEFAULT_CUSTOMIZATION_MODIFIED, {
       buttons: this.defaultCustomizations,
       button: this.defaultCustomizations.get(id),
     });

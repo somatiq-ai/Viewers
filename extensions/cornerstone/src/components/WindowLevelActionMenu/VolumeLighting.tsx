@@ -1,10 +1,13 @@
 import React, { ReactElement, useState, useEffect, useCallback } from 'react';
 import { VolumeLightingProps } from '../../types/ViewportPresets';
 import { Numeric } from '@ohif/ui-next';
-import { useSystem } from '@ohif/core';
 
-export function VolumeLighting({ viewportId, hasShade }: VolumeLightingProps): ReactElement {
-  const { servicesManager, commandsManager } = useSystem();
+export function VolumeLighting({
+  servicesManager,
+  commandsManager,
+  viewportId,
+  hasShade,
+}: VolumeLightingProps): ReactElement {
   const { cornerstoneViewportService } = servicesManager.services;
   const [lightingValues, setLightingValues] = useState({
     ambient: null,

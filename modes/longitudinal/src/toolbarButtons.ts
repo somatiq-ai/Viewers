@@ -25,155 +25,19 @@ const toolbarButtons: Button[] = [
     id: 'MeasurementTools',
     uiType: 'ohif.toolButtonList',
     props: {
-      buttonSection: true,
+      buttonSection: 'measurementSection',
+      groupId: 'MeasurementTools',
     },
   },
   {
     id: 'MoreTools',
     uiType: 'ohif.toolButtonList',
     props: {
-      buttonSection: true,
-    },
-  },
-  {
-    id: 'AdvancedRenderingControls',
-    uiType: 'ohif.advancedRenderingControls',
-    props: {
-      buttonSection: true,
+      buttonSection: 'moreToolsSection',
+      groupId: 'MoreTools',
     },
   },
   // tool defs
-  {
-    id: 'modalityLoadBadge',
-    uiType: 'ohif.modalityLoadBadge',
-    props: {
-      icon: 'Status',
-      label: 'Status',
-      tooltip: 'Status',
-      evaluate: {
-        name: 'evaluate.modalityLoadBadge',
-        hideWhenDisabled: true,
-      },
-    },
-  },
-  {
-    id: 'navigationComponent',
-    uiType: 'ohif.navigationComponent',
-    props: {
-      icon: 'Navigation',
-      label: 'Navigation',
-      tooltip: 'Navigate between segments/measurements and manage their visibility',
-      evaluate: {
-        name: 'evaluate.navigationComponent',
-        hideWhenDisabled: true,
-      },
-    },
-  },
-  {
-    id: 'trackingStatus',
-    uiType: 'ohif.trackingStatus',
-    props: {
-      icon: 'TrackingStatus',
-      label: 'Tracking Status',
-      tooltip: 'View and manage tracking status of measurements and annotations',
-      evaluate: {
-        name: 'evaluate.trackingStatus',
-        hideWhenDisabled: true,
-      },
-    },
-  },
-  {
-    id: 'dataOverlayMenu',
-    uiType: 'ohif.dataOverlayMenu',
-    props: {
-      icon: 'ViewportViews',
-      label: 'Data Overlay',
-      tooltip: 'Configure data overlay options and manage foreground/background display sets',
-      evaluate: 'evaluate.dataOverlayMenu',
-    },
-  },
-  {
-    id: 'orientationMenu',
-    uiType: 'ohif.orientationMenu',
-    props: {
-      icon: 'OrientationSwitch',
-      label: 'Orientation',
-      tooltip: 'Change viewport orientation between axial, sagittal, coronal and reformat planes',
-      evaluate: {
-        name: 'evaluate.orientationMenu',
-        // hideWhenDisabled: true,
-      },
-    },
-  },
-  {
-    id: 'windowLevelMenuEmbedded',
-    uiType: 'ohif.windowLevelMenuEmbedded',
-    props: {
-      icon: 'WindowLevel',
-      label: 'Window Level',
-      tooltip: 'Adjust window/level presets and customize image contrast settings',
-      evaluate: {
-        name: 'evaluate.windowLevelMenuEmbedded',
-        hideWhenDisabled: true,
-      },
-    },
-  },
-  {
-    id: 'windowLevelMenu',
-    uiType: 'ohif.windowLevelMenu',
-    props: {
-      icon: 'WindowLevel',
-      label: 'Window Level',
-      tooltip: 'Adjust window/level presets and customize image contrast settings',
-      evaluate: {
-        name: 'evaluate.windowLevelMenu',
-      },
-    },
-  },
-  {
-    id: 'voiManualControlMenu',
-    uiType: 'ohif.voiManualControlMenu',
-    props: {
-      icon: 'WindowLevelAdvanced',
-      label: 'Advanced Window Level',
-      tooltip: 'Advanced window/level settings with manual controls and presets',
-      evaluate: 'evaluate.voiManualControlMenu',
-    },
-  },
-  {
-    id: 'thresholdMenu',
-    uiType: 'ohif.thresholdMenu',
-    props: {
-      icon: 'Threshold',
-      label: 'Threshold',
-      tooltip: 'Image threshold settings',
-      evaluate: {
-        name: 'evaluate.thresholdMenu',
-        hideWhenDisabled: true,
-      },
-    },
-  },
-  {
-    id: 'opacityMenu',
-    uiType: 'ohif.opacityMenu',
-    props: {
-      icon: 'Opacity',
-      label: 'Opacity',
-      tooltip: 'Image opacity settings',
-      evaluate: {
-        name: 'evaluate.opacityMenu',
-        hideWhenDisabled: true,
-      },
-    },
-  },
-  {
-    id: 'Colorbar',
-    uiType: 'ohif.colorbar',
-    props: {
-      type: 'tool',
-      label: 'Colorbar',
-    },
-  },
   {
     id: 'Reset',
     uiType: 'ohif.toolButton',
@@ -636,6 +500,34 @@ const toolbarButtons: Button[] = [
     },
   },
   {
+    id: 'TwoPanel',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'layout-common-1x2',
+      label: 'Two Panel',
+      tooltip: 'Two Panel Layout (1x2)',
+      commands: {
+        commandName: 'setViewportGridLayout',
+        commandOptions: {
+          numRows: window.innerWidth < 768 ? 2 : 1,
+          numCols: window.innerWidth < 768 ? 1 : 2,
+        },
+      },
+      evaluate: 'evaluate.action',
+    },
+  },
+  {
+    id: 'MPR',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'icon-mpr',
+      label: 'MPR',
+      tooltip: 'MPR - Click to cycle: Axial → Coronal → Sagittal',
+      commands: 'cycleMPROnMobile',
+      evaluate: 'evaluate.displaySetIsReconstructable',
+    },
+  },
+  {
     id: 'Crosshairs',
     uiType: 'ohif.toolButton',
     props: {
@@ -644,9 +536,9 @@ const toolbarButtons: Button[] = [
       label: 'Crosshairs',
       commands: {
         commandName: 'setToolActiveToolbar',
-        commandOptions: {
-          toolGroupIds: ['mpr'],
-        },
+          commandOptions: {
+            toolGroupIds: ['mpr', 'primaryAxiaMobile'],
+          },
       },
       evaluate: {
         name: 'evaluate.cornerstoneTool',
@@ -654,28 +546,58 @@ const toolbarButtons: Button[] = [
       },
     },
   },
-  // Section containers for the nested toolbox
   {
-    id: 'SegmentationUtilities',
-    uiType: 'ohif.toolBoxButton',
+    id: 'Sagittal',
+    uiType: 'ohif.toolButton',
     props: {
-      buttonSection: true,
+      icon: 'icon-sagittal',
+      label: 'Sagittal',
+      tooltip: 'Sagittal View',
+      commands: [
+        {
+          commandName: 'setSelectedViewportOrientation',
+          commandOptions: {
+            orientation: 'sagittal',
+          },
+        },
+      ],
+      evaluate: 'evaluate.displaySetIsReconstructable',
     },
   },
   {
-    id: 'SegmentLabelTool',
-    uiType: 'ohif.toolBoxButton',
+    id: 'Coronal',
+    uiType: 'ohif.toolButton',
     props: {
-      icon: 'tool-segment-label',
-      label: 'Segment Label Display',
-      tooltip: 'Click to show or hide segment labels when hovering with your mouse.',
-      commands: { commandName: 'toggleSegmentLabel' },
-      evaluate: [
-        'evaluate.cornerstoneTool.toggle',
+      icon: 'icon-coronal',
+      label: 'Coronal',
+      tooltip: 'Coronal View',
+      commands: [
         {
-          name: 'evaluate.cornerstone.hasSegmentation',
+          commandName: 'setSelectedViewportOrientation',
+          commandOptions: {
+            orientation: 'coronal',
+          },
         },
       ],
+      evaluate: 'evaluate.displaySetIsReconstructable',
+    },
+  },
+  {
+    id: 'Axial',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'icon-axial',
+      label: 'Axial',
+      tooltip: 'Axial View',
+      commands: [
+        {
+          commandName: 'setSelectedViewportOrientation',
+          commandOptions: {
+            orientation: 'axial',
+          },
+        },
+      ],
+      evaluate: 'evaluate.displaySetIsReconstructable'
     },
   },
   // {

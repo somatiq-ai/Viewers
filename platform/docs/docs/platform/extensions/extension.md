@@ -1,8 +1,6 @@
 ---
 sidebar_position: 4
 sidebar_label: Extension Manager
-title: OHIF Extension Manager
-summary: Documentation for OHIF's ExtensionManager class, which manages the registration and access of extensions, providing methods to retrieve module entries, access data sources, and handle extension configurations.
 ---
 
 # Extension Manager

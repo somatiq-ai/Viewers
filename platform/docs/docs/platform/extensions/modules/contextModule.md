@@ -1,8 +1,6 @@
 ---
 sidebar_position: 9
 sidebar_label: Context
-title: Context Module
-summary: Documentation for OHIF Context Module, which enables component communication via React Context, allowing viewport and panel components to share state and synchronize through a common provider mechanism.
 ---
 # Module: Context
 

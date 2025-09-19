@@ -13,7 +13,8 @@ const toolbarButtons: Button[] = [
     id: 'MeasurementTools',
     uiType: 'ohif.toolButtonList',
     props: {
-      buttonSection: true,
+      buttonSection: 'measurementSection',
+      groupId: 'MeasurementTools',
     },
   },
   {

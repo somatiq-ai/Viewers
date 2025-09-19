@@ -21,16 +21,7 @@ const TrackedMeasurementsContext = React.createContext();
 TrackedMeasurementsContext.displayName = 'TrackedMeasurementsContext';
 const useTrackedMeasurements = () => useContext(TrackedMeasurementsContext);
 
-const SR_SOP_CLASS_HANDLER_ID =
-  '@ohif/extension-cornerstone-dicom-sr.sopClassHandlerModule.dicom-sr';
-const COMPREHENSIVE_3D_SR_SOP_CLASS_HANDLER_ID =
-  '@ohif/extension-cornerstone-dicom-sr.sopClassHandlerModule.dicom-sr-3d';
-
-const hasValidSOPClassHandlerId = displaySet => {
-  return [SR_SOP_CLASS_HANDLER_ID, COMPREHENSIVE_3D_SR_SOP_CLASS_HANDLER_ID].includes(
-    displaySet.SOPClassHandlerId
-  );
-};
+const SR_SOPCLASSHANDLERID = '@ohif/extension-cornerstone-dicom-sr.sopClassHandlerModule.dicom-sr';
 
 /**
  *
@@ -44,12 +35,7 @@ function TrackedMeasurementsContextProvider(
 
   const [viewportGrid, viewportGridService] = useViewportGrid();
   const { activeViewportId, viewports } = viewportGrid;
-  const {
-    measurementService,
-    displaySetService,
-    customizationService,
-    trackedMeasurementsService,
-  } = servicesManager.services as AppTypes.Services;
+  const { measurementService, displaySetService, customizationService } = servicesManager.services;
 
   const machineOptions = Object.assign({}, defaultOptions);
   machineOptions.actions = Object.assign({}, machineOptions.actions, {
@@ -127,7 +113,7 @@ function TrackedMeasurementsContextProvider(
       // it will be in the correct position zoom and pan
       commandsManager.runCommand('updateStoredPositionPresentation', {
         viewportId: activeViewportId,
-        displaySetInstanceUIDs: [referencedDisplaySetUID],
+        displaySetInstanceUID: referencedDisplaySetUID,
         referencedImageId: trackedMeasurement.referencedImageId,
       });
 
@@ -158,7 +144,12 @@ function TrackedMeasurementsContextProvider(
       }
     },
     clearAllMeasurements: (ctx, evt) => {
-      measurementService.clearMeasurements();
+      const measurements = measurementService.getMeasurements();
+      const measurementIds = measurements.map(fm => fm.uid);
+
+      for (let i = 0; i < measurementIds.length; i++) {
+        measurementService.remove(measurementIds[i]);
+      }
       measurementService.setIsMeasurementDeletedIndividually(false);
     },
     clearDisplaySetHydratedState: (ctx, evt) => {
@@ -281,13 +272,6 @@ function TrackedMeasurementsContextProvider(
     measurementTrackingMachine
   );
 
-  // Update TrackedMeasurementsService when trackedSeries changes in context
-  useEffect(() => {
-    if (trackedMeasurements?.context?.trackedSeries && trackedMeasurementsService) {
-      trackedMeasurementsService.updateTrackedSeries(trackedMeasurements.context.trackedSeries);
-    }
-  }, [trackedMeasurements?.context?.trackedSeries, trackedMeasurementsService]);
-
   useEffect(() => {
     // Update the state machine with the active viewport ID
     sendTrackedMeasurementsEvent('UPDATE_ACTIVE_VIEWPORT_ID', {
@@ -329,14 +313,18 @@ function TrackedMeasurementsContextProvider(
         // The issue here is that this handler in TrackedMeasurementsContext
         // ends up occurring before the Viewport is created, so the displaySet
         // is not loaded yet, and isRehydratable is undefined unless we call load().
-        if (hasValidSOPClassHandlerId(displaySet) && !displaySet.isLoaded && displaySet.load) {
+        if (
+          displaySet.SOPClassHandlerId === SR_SOPCLASSHANDLERID &&
+          !displaySet.isLoaded &&
+          displaySet.load
+        ) {
           await displaySet.load();
         }
 
         // Magic string
         // load function added by our sopClassHandler module
         if (
-          hasValidSOPClassHandlerId(displaySet) &&
+          displaySet.SOPClassHandlerId === SR_SOPCLASSHANDLERID &&
           displaySet.isRehydratable === true &&
           !displaySet.isHydrated
         ) {

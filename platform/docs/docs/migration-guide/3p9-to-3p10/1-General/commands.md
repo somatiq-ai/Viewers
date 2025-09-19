@@ -1,6 +1,5 @@
 ---
 title: Commands
-summary: Migration guide for commands in OHIF 3.10, covering the replacement of deleteMeasurement with removeMeasurement and setSourceViewportForReferenceLinesTool with the more generic setViewportForToolConfiguration command.
 ---
 
 

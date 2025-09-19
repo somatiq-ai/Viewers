@@ -70,11 +70,11 @@ function modeFactory({ modeConfiguration }) {
           },
           {
             toolName: toolNames.Zoom,
-            bindings: [{ mouseButton: Enums.MouseBindings.Secondary }, { numTouchPoints: 2 }],
+            bindings: [{ mouseButton: Enums.MouseBindings.Secondary }],
           },
           {
             toolName: toolNames.StackScroll,
-            bindings: [{ mouseButton: Enums.MouseBindings.Wheel }, { numTouchPoints: 3 }],
+            bindings: [{ mouseButton: Enums.MouseBindings.Wheel }],
           },
         ],
         passive: [
@@ -94,12 +94,13 @@ function modeFactory({ modeConfiguration }) {
 
       toolGroupService.createToolGroupAndAddTools('default', tools);
 
-      toolbarService.register(toolbarButtons);
-      toolbarService.updateSection('primary', [
-        'MeasurementTools',
+      toolbarService.addButtons(toolbarButtons);
+      toolbarService.createButtonSection('primary', [
+        'measurementSection',
         'Zoom',
         'WindowLevel',
         'Pan',
+        'MPR',
         'Layout',
         'MoreTools',
       ]);

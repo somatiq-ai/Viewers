@@ -1,7 +1,6 @@
 ---
 id: seg-service-mod
 title: SegmentationService Modifications
-summary: Migration guide for segmentation representation management API changes in OHIF 3.9, showing how to transition from tool group-based methods to viewport-centric approaches for adding, removing, and querying segmentation representations.
 ---
 
 

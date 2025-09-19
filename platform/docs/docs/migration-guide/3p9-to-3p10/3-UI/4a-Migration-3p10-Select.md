@@ -1,6 +1,5 @@
 ---
-title: Select
-summary: Migration guide for Select components in OHIF 3.10, explaining the transition from @ohif/ui to @ohif/ui-next, with details on the new Select.Root, Select.Trigger, Select.Content, and Select.Item structure replacing the old dropdown approach.
+title: Tooltip
 ---
 
 

@@ -6,7 +6,7 @@ import { useHangingProtocolStageIndexStore } from '../stores/useHangingProtocolS
 export type ReturnType = {
   hangingProtocolStageIndexMap: Record<string, Types.HangingProtocol.HPInfo>;
   viewportGridStore: Record<string, unknown>;
-  displaySetSelectorMap: Record<string, Array<string>>;
+  displaySetSelectorMap: Record<string, string>;
 };
 
 /**
@@ -53,32 +53,22 @@ const reuseCachedLayout = (state, hangingProtocolService: HangingProtocolService
     if (!displaySetOptions) {
       return;
     }
-    const activeDisplaySetUIDs = [];
-
     for (let i = 0; i < displaySetOptions.length; i++) {
       const displaySetUID = displaySetInstanceUIDs[i];
       if (!displaySetUID) {
         continue;
       }
-      if (viewportId === activeViewportId) {
-        activeDisplaySetUIDs.push(displaySetUID);
+      if (viewportId === activeViewportId && i === 0) {
+        setDisplaySetSelector(`${activeStudyUID}:activeDisplaySet:0`, displaySetUID);
       }
-
-      // The activeDisplaySet selector should only be set once (i.e. for the actual active display set)
-      if (displaySetOptions[i]?.id && displaySetOptions[i].id !== 'activeDisplaySet') {
-        // TODO: handle multiple layers/display sets for the non-active viewports
+      if (displaySetOptions[i]?.id) {
         setDisplaySetSelector(
           `${activeStudyUID}:${displaySetOptions[i].id}:${
             displaySetOptions[i].matchedDisplaySetsIndex || 0
           }`,
-          [displaySetUID]
+          displaySetUID
         );
       }
-    }
-
-    if (viewportId === activeViewportId) {
-      // After going through all the display set options for the active viewport, store the display set selector array
-      setDisplaySetSelector(`${activeStudyUID}:activeDisplaySet:0`, activeDisplaySetUIDs);
     }
   });
 

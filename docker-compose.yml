@@ -1,0 +1,12 @@
+services:
+  # OHIF Build Container - Creates static files for Apache
+  ohif-build:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ohif-build:latest
+    container_name: ohif-build
+    volumes:
+      - ./dist:/dist
+    environment:
+      - APP_CONFIG=${APP_CONFIG:-config/default.js}

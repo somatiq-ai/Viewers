@@ -5,7 +5,6 @@ import ThumbnailType from './ThumbnailType';
 export * from './Predicate';
 export * from './ContextMenuItem';
 export * from './ViewportActionCornersTypes';
-export * from './ActionCorners';
 
 /**
  * StringNumber often comes back from DICOMweb for integer valued items.

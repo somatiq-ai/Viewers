@@ -1,4 +1,4 @@
-import { test } from 'playwright-test-coverage';
+import { test } from '@playwright/test';
 import { visitStudy, checkForScreenshot, screenShotPaths } from './utils';
 
 test.beforeEach(async ({ page }) => {

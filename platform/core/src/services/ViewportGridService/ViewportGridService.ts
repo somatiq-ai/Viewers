@@ -1,10 +1,5 @@
 import { PubSubService } from '../_shared/pubSubServiceInterface';
 
-type PresentationIdProvider = (
-  id: string,
-  { viewport, viewports, isUpdatingSameViewport }
-) => unknown;
-
 class ViewportGridService extends PubSubService {
   public static readonly EVENTS = {
     ACTIVE_VIEWPORT_ID_CHANGED: 'event::activeviewportidchanged',
@@ -25,7 +20,10 @@ class ViewportGridService extends PubSubService {
 
   serviceImplementation = {};
   servicesManager: AppTypes.ServicesManager;
-  presentationIdProviders: Map<string, PresentationIdProvider>;
+  presentationIdProviders: Map<
+    string,
+    (id: string, { viewport, viewports, isUpdatingSameViewport, servicesManager }) => unknown
+  >;
 
   constructor({ servicesManager }) {
     super(ViewportGridService.EVENTS);
@@ -34,15 +32,15 @@ class ViewportGridService extends PubSubService {
     this.presentationIdProviders = new Map();
   }
 
-  public addPresentationIdProvider(id: string, provider: PresentationIdProvider): void {
+  public addPresentationIdProvider(
+    id: string,
+    provider: (id: string, { viewport, viewports, isUpdatingSameViewport }) => unknown
+  ): void {
     this.presentationIdProviders.set(id, provider);
   }
 
-  /**
-   * Gets the presentation provider with the given id.
-   */
-  public getPresentationIdProvider(id: string): PresentationIdProvider {
-    return this.presentationIdProviders.get(id);
+  public setIsReferenceViewable(viewportId: string, isReferenceViewable: boolean): void {
+    this.serviceImplementation._setIsReferenceViewable(viewportId, isReferenceViewable);
   }
 
   public getPresentationId(id: string, viewportId: string): string | null {
@@ -100,6 +98,7 @@ class ViewportGridService extends PubSubService {
     set: setImplementation,
     getNumViewportPanes: getNumViewportPanesImplementation,
     setViewportIsReady: setViewportIsReadyImplementation,
+    setIsReferenceViewable: setIsReferenceViewableImplementation,
     getViewportState: getViewportStateImplementation,
   }): void {
     if (getViewportStateImplementation) {
@@ -133,6 +132,9 @@ class ViewportGridService extends PubSubService {
 
     if (setViewportIsReadyImplementation) {
       this.serviceImplementation._setViewportIsReady = setViewportIsReadyImplementation;
+    }
+    if (setIsReferenceViewableImplementation) {
+      this.serviceImplementation._setIsReferenceViewable = setIsReferenceViewableImplementation;
     }
   }
 

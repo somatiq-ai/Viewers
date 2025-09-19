@@ -1,11 +1,17 @@
+import OHIF from '@ohif/core';
 import { annotation } from '@cornerstonejs/tools';
-import { NO_IMAGE_ID } from '@cornerstonejs/adapters';
+const { log } = OHIF;
 
 function getFilteredCornerstoneToolState(measurementData, additionalFindingTypes) {
   const filteredToolState = {};
 
   function addToFilteredToolState(annotation, toolType) {
-    const imageId = annotation.metadata?.referencedImageId ?? NO_IMAGE_ID;
+    if (!annotation.metadata?.referencedImageId) {
+      log.warn(`[DICOMSR] No referencedImageId found for ${toolType} ${annotation.id}`);
+      return;
+    }
+
+    const imageId = annotation.metadata.referencedImageId;
 
     if (!filteredToolState[imageId]) {
       filteredToolState[imageId] = {};

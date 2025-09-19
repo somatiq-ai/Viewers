@@ -1,8 +1,6 @@
 ---
 sidebar_position: 5
 sidebar_label: Installation
-title: Extension Installation
-summary: Instructions for installing external OHIF extensions using the OHIF CLI tool, which allows adding both local and published extensions from NPM to the viewer application.
 ---
 
 # Extension: Installation

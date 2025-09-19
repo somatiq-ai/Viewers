@@ -1,36 +1,5 @@
 import * as cornerstone from '@cornerstonejs/core';
 
-function getDisplaySet({ metadata, displaySetService }) {
-  const { volumeId } = metadata;
-
-  if( volumeId ) {
-    const displaySet = displaySetService.getDisplaySetsBy(displaySet =>
-      volumeId.includes(displaySet.uid)
-    )[0];
-    if( displaySet ) {
-      return displaySet;
-    }
-    console.warn("Unable to find volumeId", volumeId);
-    metadata.volumeId = null;
-  }
-
-  if (!metadata.FrameOfReferenceUID) {
-      throw new Error(
-        'No volumeId and no FrameOfReferenceUID provided. Could not find matching displaySet.'
-      );
-    }
-    const displaySet = Array.from(displaySetService.getDisplaySetCache().values()).find(
-      ds => ds.instance?.FrameOfReferenceUID === metadata.FrameOfReferenceUID
-    );
-
-    if (!displaySet) {
-      throw new Error('Could not find matching displaySet for the provided FrameOfReferenceUID.');
-    }
-
-    return displaySet;
-
-}
-
 /**
  * It checks if the imageId is provided then it uses it to query
  * the metadata and get the SOPInstanceUID, SeriesInstanceUID and StudyInstanceUID.
@@ -44,7 +13,11 @@ export default function getSOPInstanceAttributes(imageId, displaySetService, ann
   }
 
   const { metadata } = annotation;
-  const displaySet = getDisplaySet({ metadata, displaySetService });
+  const { volumeId } = metadata;
+
+  const displaySet = displaySetService.getDisplaySetsBy(displaySet =>
+    volumeId.includes(displaySet.uid)
+  )[0];
   const { StudyInstanceUID, SeriesInstanceUID } = displaySet;
 
   return {

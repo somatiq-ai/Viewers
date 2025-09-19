@@ -1,7 +1,6 @@
 ---
 sidebar_position: 2
-title: SSL Configuration for Docker
-summary: Guide to configuring SSL for OHIF Viewer in Docker deployments, including environment variable setup, certificate mounting, permissions management, and instructions for both CA-signed and self-signed certificate implementation.
+title: SSL
 ---
 
 # SSL

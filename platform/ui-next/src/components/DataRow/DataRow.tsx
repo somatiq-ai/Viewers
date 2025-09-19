@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '../../components/Button/Button';
 import {
   DropdownMenu,
@@ -57,7 +57,7 @@ import { cn } from '../../lib/utils';
  * @property {() => void} onColor - Callback when color change is requested
  */
 interface DataRowProps {
-  number: number | null;
+  number: number;
   disableEditing: boolean;
   description: string;
   details?: { primary: string[]; secondary: string[] };
@@ -208,18 +208,15 @@ export const DataRow: React.FC<DataRowProps> = ({
         <div className="bg-primary/20 pointer-events-none absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100"></div>
 
         {/* Number Box */}
-        {number !== null && (
-          <div
-            className={`flex h-7 max-h-7 w-7 flex-shrink-0 items-center justify-center rounded-l border-r border-black text-base ${
-              isSelected ? 'bg-highlight text-black' : 'bg-muted text-muted-foreground'
-            } overflow-hidden`}
-          >
-            {number}
-          </div>
-        )}
+        <div
+          className={`flex h-7 max-h-7 w-7 flex-shrink-0 items-center justify-center rounded-l border-r border-black text-base ${
+            isSelected ? 'bg-highlight text-black' : 'bg-muted text-muted-foreground'
+          } overflow-hidden`}
+        >
+          {number}
+        </div>
 
-        {/* add some space if there is not segment index */}
-        {number === null && <div className="ml-1 h-7"></div>}
+        {/* Color Circle (Optional) */}
         {colorHex && (
           <div className="flex h-7 w-5 items-center justify-center">
             <span
@@ -295,7 +292,6 @@ export const DataRow: React.FC<DataRowProps> = ({
                       : 'opacity-0 group-hover:opacity-100'
                   }`}
                   aria-label="Actions"
-                  dataCY="actionsMenuTrigger"
                   onClick={e => e.stopPropagation()} // Prevent row selection on button click
                 >
                   <Icons.More className="h-6 w-6" />
@@ -309,41 +305,21 @@ export const DataRow: React.FC<DataRowProps> = ({
                 <>
                   <DropdownMenuItem onClick={e => handleAction('Rename', e)}>
                     <Icons.Rename className="text-foreground" />
-                    <span
-                      className="pl-2"
-                      data-cy="Rename"
-                    >
-                      Rename
-                    </span>
+                    <span className="pl-2">Rename</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={e => handleAction('Delete', e)}>
                     <Icons.Delete className="text-foreground" />
-                    <span
-                      className="pl-2"
-                      data-cy="Delete"
-                    >
-                      Delete
-                    </span>
+                    <span className="pl-2">Delete</span>
                   </DropdownMenuItem>
                   {onColor && (
                     <DropdownMenuItem onClick={e => handleAction('Color', e)}>
                       <Icons.ColorChange className="text-foreground" />
-                      <span
-                        className="pl-2"
-                        data-cy="Change Color"
-                      >
-                        Change Color
-                      </span>
+                      <span className="pl-2">Change Color</span>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem onClick={e => handleAction('Lock', e)}>
                     <Icons.Lock className="text-foreground" />
-                    <span
-                      className="pl-2"
-                      data-cy="LockToggle"
-                    >
-                      {isLocked ? 'Unlock' : 'Lock'}
-                    </span>
+                    <span className="pl-2">{isLocked ? 'Unlock' : 'Lock'}</span>
                   </DropdownMenuItem>
                 </>
               </DropdownMenuContent>

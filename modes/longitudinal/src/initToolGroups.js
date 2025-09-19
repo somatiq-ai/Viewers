@@ -31,11 +31,11 @@ function initDefaultToolGroup(extensionManager, toolGroupService, commandsManage
       },
       {
         toolName: toolNames.Zoom,
-        bindings: [{ mouseButton: Enums.MouseBindings.Secondary }, { numTouchPoints: 2 }],
+        bindings: [{ mouseButton: Enums.MouseBindings.Secondary }],
       },
       {
         toolName: toolNames.StackScroll,
-        bindings: [{ mouseButton: Enums.MouseBindings.Wheel }, { numTouchPoints: 3 }],
+        bindings: [{ mouseButton: Enums.MouseBindings.Wheel }],
       },
     ],
     passive: [
@@ -98,9 +98,7 @@ function initDefaultToolGroup(extensionManager, toolGroupService, commandsManage
     ],
   };
 
-  const updatedTools = commandsManager.run('initializeSegmentLabelTool', { tools });
-
-  toolGroupService.createToolGroupAndAddTools(toolGroupId, updatedTools);
+  toolGroupService.createToolGroupAndAddTools(toolGroupId, tools);
 }
 
 function initSRToolGroup(extensionManager, toolGroupService) {
@@ -142,12 +140,11 @@ function initSRToolGroup(extensionManager, toolGroupService) {
           {
             mouseButton: Enums.MouseBindings.Secondary,
           },
-          { numTouchPoints: 2 },
         ],
       },
       {
         toolName: toolNames.StackScroll,
-        bindings: [{ mouseButton: Enums.MouseBindings.Wheel }, { numTouchPoints: 3 }],
+        bindings: [{ mouseButton: Enums.MouseBindings.Wheel }],
       },
     ],
     passive: [
@@ -194,11 +191,11 @@ function initMPRToolGroup(extensionManager, toolGroupService, commandsManager) {
       },
       {
         toolName: toolNames.Zoom,
-        bindings: [{ mouseButton: Enums.MouseBindings.Secondary }, { numTouchPoints: 2 }],
+        bindings: [{ mouseButton: Enums.MouseBindings.Secondary }],
       },
       {
         toolName: toolNames.StackScroll,
-        bindings: [{ mouseButton: Enums.MouseBindings.Wheel }, { numTouchPoints: 3 }],
+        bindings: [{ mouseButton: Enums.MouseBindings.Wheel }],
       },
     ],
     passive: [
@@ -241,6 +238,9 @@ function initMPRToolGroup(extensionManager, toolGroupService, commandsManager) {
         },
       },
     ],
+    enabled: [
+      { toolName: toolNames.ReferenceLines },
+    ],
     disabled: [
       {
         toolName: toolNames.Crosshairs,
@@ -251,7 +251,13 @@ function initMPRToolGroup(extensionManager, toolGroupService, commandsManager) {
             xOffset: 0.95,
             yOffset: 0.05,
           },
-          disableOnPassive: true,
+          handleRadius:  window.innerWidth < 768 ? 7 : 10,
+          mobile: {
+            enabled: true, //window.innerWidth < 768,
+            opacity: 0.4,
+            handleRadius:  window.innerWidth < 768 ? 7 : 10,
+          },
+          disableOnPassive: false,
           autoPan: {
             enabled: false,
             panSize: 10,
@@ -275,7 +281,6 @@ function initMPRToolGroup(extensionManager, toolGroupService, commandsManager) {
       {
         toolName: toolNames.AdvancedMagnify,
       },
-      { toolName: toolNames.ReferenceLines },
     ],
   };
 
@@ -296,11 +301,11 @@ function initVolume3DToolGroup(extensionManager, toolGroupService) {
       },
       {
         toolName: toolNames.Zoom,
-        bindings: [{ mouseButton: Enums.MouseBindings.Secondary }, { numTouchPoints: 2 }],
+        bindings: [{ mouseButton: Enums.MouseBindings.Secondary }],
       },
       {
         toolName: toolNames.Pan,
-        bindings: [{ mouseButton: Enums.MouseBindings.Auxiliary }, { numTouchPoints: 3 }],
+        bindings: [{ mouseButton: Enums.MouseBindings.Auxiliary }],
       },
     ],
   };

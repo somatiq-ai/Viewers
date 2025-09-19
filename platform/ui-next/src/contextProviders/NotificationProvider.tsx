@@ -23,6 +23,8 @@ const NotificationProvider = ({
   service,
   deduplicationInterval = 10000, // Default to 10 seconds
 }: NotificationProviderProps) => {
+  // Check if errors should be disabled from config or environment
+  const isErrorsDisabled = window.config?.disableErrors;
   const DEFAULT_OPTIONS = {
     title: '',
     message: '',
@@ -52,6 +54,14 @@ const NotificationProvider = ({
       ...DEFAULT_OPTIONS,
       ...options,
     };
+
+    console.log({isErrorsDisabled, type});
+
+    // Don't show error notifications if errors are disabled
+    if (isErrorsDisabled && type === 'error') {
+      return null;
+    }
+
 
     // Use the provider's deduplicationInterval by default, but allow it to be overridden per notification
     const notificationDeduplicationInterval = optionsDeduplicationInterval || deduplicationInterval;
@@ -144,7 +154,7 @@ const NotificationProvider = ({
     }
 
     return id;
-  }, []);
+  }, [isErrorsDisabled]);
 
   const hide = useCallback(id => {
     toast.dismiss(id);

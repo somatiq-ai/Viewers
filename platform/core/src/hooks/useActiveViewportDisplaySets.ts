@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { DisplaySet } from '../types';
-import { useSystem } from '../';
+
 /**
  * Hook that listens for changes in the active viewport and its display sets.
  * It returns the display sets associated with the active viewport.
@@ -8,8 +8,7 @@ import { useSystem } from '../';
  * @param servicesManager - Services manager instance
  * @returns Array of display sets for the active viewport
  */
-const useActiveViewportDisplaySets = (): DisplaySet[] => {
-  const { servicesManager } = useSystem();
+const useActiveViewportDisplaySets = ({ servicesManager }): DisplaySet[] => {
   const { displaySetService, viewportGridService } = servicesManager.services;
   // Move this function outside useEffect and memoize it
   const getDisplaySetsForViewport = useCallback(

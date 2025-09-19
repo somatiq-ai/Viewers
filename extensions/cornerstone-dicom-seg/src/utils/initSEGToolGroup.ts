@@ -1,14 +1,7 @@
-function createSEGToolGroupAndAddTools({
-  commandsManager,
-  toolGroupService,
-  customizationService,
-  toolGroupId,
-}) {
+function createSEGToolGroupAndAddTools(ToolGroupService, customizationService, toolGroupId) {
   const tools = customizationService.getCustomization('cornerstone.overlayViewportTools');
 
-  const updatedTools = commandsManager.run('initializeSegmentLabelTool', { tools });
-
-  return toolGroupService.createToolGroupAndAddTools(toolGroupId, updatedTools);
+  return ToolGroupService.createToolGroupAndAddTools(toolGroupId, tools);
 }
 
 export default createSEGToolGroupAndAddTools;

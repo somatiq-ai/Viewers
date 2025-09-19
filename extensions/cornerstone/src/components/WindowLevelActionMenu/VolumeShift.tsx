@@ -1,10 +1,12 @@
 import React, { ReactElement, useCallback, useEffect, useState, useRef } from 'react';
 import { VolumeShiftProps } from '../../types/ViewportPresets';
 import { Numeric } from '@ohif/ui-next';
-import { useSystem } from '@ohif/core';
 
-export function VolumeShift({ viewportId }: VolumeShiftProps): ReactElement {
-  const { servicesManager, commandsManager } = useSystem();
+export function VolumeShift({
+  viewportId,
+  commandsManager,
+  servicesManager,
+}: VolumeShiftProps): ReactElement {
   const { cornerstoneViewportService } = servicesManager.services;
   const [minShift, setMinShift] = useState<number | null>(null);
   const [maxShift, setMaxShift] = useState<number | null>(null);

@@ -8,9 +8,20 @@ import { Toolbar } from '../Toolbar/Toolbar';
 import HeaderPatientInfo from './HeaderPatientInfo';
 import { PatientInfoVisibility } from './HeaderPatientInfo/HeaderPatientInfo';
 import { preserveQueryParameters } from '@ohif/app';
-import { Types } from '@ohif/core';
 
-function ViewerHeader({ appConfig }: withAppTypes<{ appConfig: AppTypes.Config }>) {
+function ViewerHeader({
+  appConfig,
+  isMobile,
+  hideToolbars,
+  onClickOpenStudies,
+  showStudyBrowserOnMobile,
+}: withAppTypes<{
+  appConfig: AppTypes.Config;
+  isMobile?: boolean;
+  hideToolbars?: boolean;
+  onClickOpenStudies?: () => void;
+  showStudyBrowserOnMobile?: boolean;
+}>) {
   const { servicesManager, extensionManager, commandsManager } = useSystem();
   const { customizationService } = servicesManager.services;
 
@@ -39,34 +50,28 @@ function ViewerHeader({ appConfig }: withAppTypes<{ appConfig: AppTypes.Config }
   const { t } = useTranslation();
   const { show } = useModal();
 
-  const AboutModal = customizationService.getCustomization(
-    'ohif.aboutModal'
-  ) as Types.MenuComponentCustomization;
-
-  const UserPreferencesModal = customizationService.getCustomization(
-    'ohif.userPreferencesModal'
-  ) as Types.MenuComponentCustomization;
+  const AboutModal: any = customizationService.getCustomization('ohif.aboutModal') as any;
+  const UserPreferencesModal: any = customizationService.getCustomization('ohif.userPreferencesModal') as any;
 
   const menuOptions = [
     {
-      title: AboutModal?.menuTitle ?? t('Header:About'),
+      title: t('Header:About'),
       icon: 'info',
       onClick: () =>
         show({
           content: AboutModal,
-          title: AboutModal?.title ?? t('AboutModal:About OHIF Viewer'),
-          containerClassName: AboutModal?.containerClassName ?? 'max-w-md',
+          title: t('AboutModal:About OHIF Viewer'),
+          containerClassName: 'max-w-md',
         }),
     },
     {
-      title: UserPreferencesModal.menuTitle ?? t('Header:Preferences'),
+      title: t('Header:Preferences'),
       icon: 'settings',
       onClick: () =>
         show({
           content: UserPreferencesModal,
-          title: UserPreferencesModal.title ?? t('UserPreferencesModal:User preferences'),
-          containerClassName:
-            UserPreferencesModal?.containerClassName ?? 'flex max-w-4xl p-6 flex-col',
+          title: t('UserPreferencesModal:User preferences'),
+          containerClassName: 'flex max-w-4xl p-6 flex-col',
         }),
     },
   ];
@@ -81,47 +86,122 @@ function ViewerHeader({ appConfig }: withAppTypes<{ appConfig: AppTypes.Config }
     });
   }
 
+
   return (
     <Header
       menuOptions={menuOptions}
       isReturnEnabled={!!appConfig.showStudyList}
       onClickReturnButton={onClickReturnButton}
+      isMobile={isMobile}
       WhiteLabeling={appConfig.whiteLabeling}
-      Secondary={<Toolbar buttonSection="secondary" />}
-      PatientInfo={
-        appConfig.showPatientInfo !== PatientInfoVisibility.DISABLED && (
-          <HeaderPatientInfo
+      Secondary={
+        hideToolbars ? undefined : (
+          <Toolbar
             servicesManager={servicesManager}
-            appConfig={appConfig}
+            buttonSection="secondary"
           />
+        )
+      }
+      PatientInfo={
+        isMobile
+          ? null
+          : appConfig.showPatientInfo !== PatientInfoVisibility.DISABLED && (
+              <HeaderPatientInfo
+                servicesManager={servicesManager}
+                appConfig={appConfig}
+              />
+            )
+      }
+      Logo={
+        (isMobile && !showStudyBrowserOnMobile ) ? (
+          <Button
+            variant="ghost"
+            className="hover:bg-primary-dark flex items-center gap-2"
+            onClick={() => {
+              onClickOpenStudies?.();
+            }}
+          >
+            <Icons.ArrowLeftBold className="text-white w-5 h-5" />
+            <span className="text-sm text-white font-bold">Back</span>
+          </Button>
+        ) : (
+          <div
+            className="mr-3 inline-flex items-center"
+            data-cy="return-to-work-list"
+          >
+            <div className="ml-1">
+            {appConfig.whiteLabeling?.createLogoComponentFn?.(React, appConfig) || <Icons.OHIFLogo />}
+              {/* <Icons.OHIFLogo /> */}
+            </div>
+          </div>
         )
       }
       UndoRedo={
         <div className="text-primary flex cursor-pointer items-center">
-          <Button
-            variant="ghost"
-            className="hover:bg-primary-dark"
-            onClick={() => {
-              commandsManager.run('undo');
-            }}
-          >
-            <Icons.Undo className="" />
-          </Button>
-          <Button
-            variant="ghost"
-            className="hover:bg-primary-dark"
-            onClick={() => {
-              commandsManager.run('redo');
-            }}
-          >
-            <Icons.Redo className="" />
-          </Button>
+          {isMobile ? (
+            <>
+
+              <div className="mr-2 flex items-center">
+                <HeaderPatientInfo
+                  servicesManager={servicesManager}
+                  appConfig={appConfig}
+                />
+              </div>
+              {/* Undo/Redo buttons for mobile */}
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="hover:bg-primary-dark p-2"
+                  onClick={() => {
+                    commandsManager.run('undo');
+                  }}
+                >
+                  <Icons.Undo className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="hover:bg-primary-dark p-2"
+                  onClick={() => {
+                    commandsManager.run('redo');
+                  }}
+                >
+                  <Icons.Redo className="w-4 h-4" />
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="ghost"
+                className="hover:bg-primary-dark"
+                onClick={() => {
+                  commandsManager.run('undo');
+                }}
+              >
+                <Icons.Undo className="" />
+              </Button>
+              <Button
+                variant="ghost"
+                className="hover:bg-primary-dark"
+                onClick={() => {
+                  commandsManager.run('redo');
+                }}
+              >
+                <Icons.Redo className="" />
+              </Button>
+            </>
+          )}
         </div>
       }
     >
-      <div className="relative flex justify-center gap-[4px]">
-        <Toolbar buttonSection="primary" />
-      </div>
+
+      {hideToolbars ? null : (
+        <div className="relative flex justify-center gap-[4px]">
+          <Toolbar servicesManager={servicesManager} />
+        </div>
+      )}
     </Header>
   );
 }

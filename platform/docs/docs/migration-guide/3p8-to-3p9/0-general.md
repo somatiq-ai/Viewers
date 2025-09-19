@@ -1,7 +1,6 @@
 ---
 id: 0-general
 title: General
-summary: General migration changes from OHIF 3.8 to 3.9, including removing SharedArrayBuffer requirements, React 18 updates, Polyfill removal, webpack changes, scroll utility relocation, Crosshairs improvements, and toolbar button evaluation enhancements.
 ---
 
 import Tabs from '@theme/Tabs';

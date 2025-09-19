@@ -1,4 +1,4 @@
-import { test } from 'playwright-test-coverage';
+import { test } from '@playwright/test';
 import { visitStudy, checkForScreenshot, screenShotPaths } from './utils';
 
 test.beforeEach(async ({ page }) => {
@@ -14,22 +14,26 @@ test('should properly display MPR for MR', async ({ page }) => {
   await page.getByTestId('MPR').click();
 
   await page.waitForTimeout(5000);
+
   await checkForScreenshot(page, page, screenShotPaths.segHydrationFromMPR.mprBeforeSEG);
 
   await page.getByTestId('study-browser-thumbnail-no-image').dblclick();
 
   await page.waitForTimeout(5000);
+
   await checkForScreenshot(page, page, screenShotPaths.segHydrationFromMPR.mprAfterSEG);
 
   await page.getByTestId('yes-hydrate-btn').click();
 
   await page.waitForTimeout(5000);
+
   await checkForScreenshot(page, page, screenShotPaths.segHydrationFromMPR.mprAfterSegHydrated);
 
   await page.getByTestId('Layout').click();
   await page.getByTestId('Axial Primary').click();
 
   await page.waitForTimeout(5000);
+
   await checkForScreenshot(
     page,
     page,

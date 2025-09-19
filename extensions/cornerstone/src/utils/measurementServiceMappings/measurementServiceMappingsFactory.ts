@@ -13,7 +13,6 @@ import LivewireContour from './LivewireContour';
 import Probe from './Probe';
 import UltrasoundDirectional from './UltrasoundDirectional';
 import SegmentBidirectional from './SegmentBidirectional';
-import UltrasoundPleuraBLine from './UltrasoundPleuraBLine';
 
 const measurementServiceMappingsFactory = (
   measurementService: MeasurementService,
@@ -284,23 +283,6 @@ const measurementServiceMappingsFactory = (
       toAnnotation: UltrasoundDirectional.toAnnotation,
       toMeasurement: csToolsAnnotation =>
         UltrasoundDirectional.toMeasurement(
-          csToolsAnnotation,
-          displaySetService,
-          cornerstoneViewportService,
-          _getValueTypeFromToolType,
-          customizationService
-        ),
-      matchingCriteria: [
-        {
-          valueType: MeasurementService.VALUE_TYPES.POLYLINE,
-          points: 2,
-        },
-      ],
-    },
-    UltrasoundPleuraBLine: {
-      toAnnotation: UltrasoundPleuraBLine.toAnnotation,
-      toMeasurement: csToolsAnnotation =>
-        UltrasoundPleuraBLine.toMeasurement(
           csToolsAnnotation,
           displaySetService,
           cornerstoneViewportService,

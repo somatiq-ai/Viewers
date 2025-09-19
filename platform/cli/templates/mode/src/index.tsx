@@ -1,4 +1,3 @@
-import { hotkeys } from '@ohif/core';
 import { initToolGroups, toolbarButtons } from '@ohif/mode-longitudinal';
 import { id } from './id';
 
@@ -48,20 +47,19 @@ function modeFactory({ modeConfiguration }) {
       // Init Default and SR ToolGroups
       initToolGroups(extensionManager, toolGroupService, commandsManager);
 
-      toolbarService.register([...toolbarButtons]);
-      toolbarService.updateSection('primary', [
-        'MeasurementTools',
+      toolbarService.addButtons(toolbarButtons);
+      toolbarService.createButtonSection('primary', [
+        'measurementSection',
         'Zoom',
-        'Pan',
-        'TrackballRotate',
         'WindowLevel',
+        'Pan',
         'Capture',
         'Layout',
         'Crosshairs',
-        'MoreTools',
+        'moreToolsSection',
       ]);
 
-      toolbarService.updateSection('MeasurementTools', [
+      toolbarService.createButtonSection('measurementSection', [
         'Length',
         'Bidirectional',
         'ArrowAnnotate',
@@ -73,7 +71,7 @@ function modeFactory({ modeConfiguration }) {
         'LivewireContour',
       ]);
 
-      toolbarService.updateSection('MoreTools', [
+      toolbarService.createButtonSection('moreToolsSection', [
         'Reset',
         'rotate-right',
         'flipHorizontal',

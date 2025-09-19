@@ -1,8 +1,6 @@
 ---
 sidebar_position: 1
 sidebar_label: Introduction
-title: Managers Introduction
-summary: Overview of OHIF's manager system, which handles critical application infrastructure including extension registration, service management, command execution, and hotkey binding to coordinate functionality across the platform.
 ---
 
 # Managers

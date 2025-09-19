@@ -7,14 +7,17 @@ import {
   Icons,
   Button,
 } from '@ohif/ui-next';
-import { useSystem } from '@ohif/core';
 
 /**
  * The default sub-menu appearance and setup is defined here, but this can be
  * replaced by
  */
-const getMenuItemsDefault = ({ commandsManager, items, ...props }: withAppTypes) => {
-  const { servicesManager } = useSystem();
+const getMenuItemsDefault = ({
+  commandsManager,
+  items,
+  servicesManager,
+  ...props
+}: withAppTypes) => {
   const { customizationService } = servicesManager.services;
 
   // This allows replacing the default child item for menus, whereas the entire
@@ -33,7 +36,7 @@ const getMenuItemsDefault = ({ commandsManager, items, ...props }: withAppTypes)
       onClick: ({ commandsManager, ...props }: withAppTypes) => () => void;
     };
   }) => (
-    <DropdownMenuItem onClick={() => item.onClick({ commandsManager, servicesManager, ...props })}>
+    <DropdownMenuItem onClick={() => item.onClick({ commandsManager, ...props })}>
       <div className="flex items-center gap-2">
         {item.iconName && <Icons.ByName name={item.iconName} />}
         <span>{item.label}</span>
@@ -41,7 +44,7 @@ const getMenuItemsDefault = ({ commandsManager, items, ...props }: withAppTypes)
     </DropdownMenuItem>
   );
 
-  const MenuItemComponent = menuContent ?? DefaultMenuItem;
+  const MenuItemComponent = menuContent?.content || DefaultMenuItem;
 
   return (
     <DropdownMenuContent
@@ -73,8 +76,12 @@ const getMenuItemsDefault = ({ commandsManager, items, ...props }: withAppTypes)
  * @returns Component bound to the bindProps
  */
 export default function MoreDropdownMenu(bindProps) {
-  const { menuItemsKey, getMenuItems = getMenuItemsDefault, commandsManager } = bindProps;
-  const { servicesManager } = useSystem();
+  const {
+    menuItemsKey,
+    getMenuItems = getMenuItemsDefault,
+    commandsManager,
+    servicesManager,
+  } = bindProps;
   const { customizationService } = servicesManager.services;
 
   const items = customizationService.getCustomization(menuItemsKey);

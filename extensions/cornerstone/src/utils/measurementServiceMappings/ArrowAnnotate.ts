@@ -75,7 +75,7 @@ const ArrowAnnotate = {
       frameNumber: mappedAnnotations[0]?.frameNumber || 1,
       toolName: metadata.toolName,
       displaySetInstanceUID: displaySet.displaySetInstanceUID,
-      label: data.label,
+      label: data.text,
       displayText: displayText,
       data: data.cachedStats,
       type: getValueTypeFromToolType(toolName),

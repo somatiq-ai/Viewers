@@ -1,8 +1,6 @@
 ---
 sidebar_position: 2
 sidebar_label: Architecture
-title: OHIF Architecture
-summary: Detailed explanation of OHIF Viewer's architecture, covering the platform's core components, extensions system, modes concept, and the relationships between these elements that enable building flexible and extensible medical imaging applications.
 ---
 
 # Architecture

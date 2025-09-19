@@ -1,4 +1,4 @@
-import { test } from 'playwright-test-coverage';
+import { test } from '@playwright/test';
 import { visitStudy, checkForScreenshot, screenShotPaths } from './utils';
 
 test.beforeEach(async ({ page }) => {
@@ -18,7 +18,8 @@ test.describe('Axial Primary Test', async () => {
     await checkForScreenshot(
       page,
       page,
-      screenShotPaths.axialPrimary.axialPrimaryDisplayedCorrectly
+      screenShotPaths.axialPrimary.axialPrimaryDisplayedCorrectly,
+      200
     );
   });
 });

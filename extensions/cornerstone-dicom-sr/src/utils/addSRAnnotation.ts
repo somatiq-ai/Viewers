@@ -1,11 +1,8 @@
 import { Types, annotation } from '@cornerstonejs/tools';
 import { metaData } from '@cornerstonejs/core';
-import { adaptersSR } from '@cornerstonejs/adapters';
 
 import getRenderableData from './getRenderableData';
 import toolNames from '../tools/toolNames';
-
-const { MeasurementReport } = adaptersSR.Cornerstone3D;
 
 export default function addSRAnnotation(measurement, imageId, frameNumber) {
   let toolName = toolNames.DICOMSRDisplay;
@@ -28,12 +25,7 @@ export default function addSRAnnotation(measurement, imageId, frameNumber) {
   }
 
   if (valueType === 'SCOORD3D') {
-    const adapter = MeasurementReport.getAdapterForTrackingIdentifier(
-      measurement.TrackingIdentifier
-    );
-    if (!adapter) {
-      toolName = toolNames.SRSCOORD3DPoint;
-    }
+    toolName = toolNames.SRSCOORD3DPoint;
 
     // get the ReferencedFrameOfReferenceUID from the measurement
     frameOfReferenceUID = measurement.coords[0].ReferencedFrameOfReferenceSequence;
@@ -71,4 +63,5 @@ export default function addSRAnnotation(measurement, imageId, frameNumber) {
    * was not triggering annotation_added events.
    */
   annotation.state.addAnnotation(SRAnnotation);
+  console.debug('Adding SR annotation:', SRAnnotation);
 }

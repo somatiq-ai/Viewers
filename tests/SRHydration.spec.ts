@@ -1,4 +1,4 @@
-import { test } from 'playwright-test-coverage';
+import { test } from '@playwright/test';
 import { visitStudy, checkForScreenshot, screenShotPaths } from './utils';
 
 test.beforeEach(async ({ page }) => {
@@ -11,7 +11,6 @@ test('should hydrate SR reports correctly', async ({ page }) => {
   await page.getByTestId('side-panel-header-right').click();
   await page.getByTestId('trackedMeasurements-btn').click();
   await page.getByTestId('study-browser-thumbnail-no-image').dblclick();
-  await page.waitForTimeout(2000);
   await checkForScreenshot(page, page, screenShotPaths.srHydration.srPreHydration);
 
   await page.evaluate(() => {
@@ -34,7 +33,6 @@ test('should hydrate SR reports correctly', async ({ page }) => {
   });
 
   await page.getByTestId('yes-hydrate-btn').click();
-  await page.waitForTimeout(2000);
   await checkForScreenshot(page, page, screenShotPaths.srHydration.srPostHydration);
 
   await page.evaluate(() => {
@@ -57,6 +55,5 @@ test('should hydrate SR reports correctly', async ({ page }) => {
   });
 
   await page.getByTestId('data-row').first().click();
-
   await checkForScreenshot(page, page, screenShotPaths.srHydration.srJumpToMeasurement);
 });

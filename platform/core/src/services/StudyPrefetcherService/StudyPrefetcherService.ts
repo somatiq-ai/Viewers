@@ -481,6 +481,7 @@ class StudyPrefetcherService extends PubSubService {
 
     displaySets.forEach(displaySet => this._addDisplaySetLoadingState(displaySet));
     displaySetsToPrefetch.forEach(displaySet => this._enqueueDisplaySetImagesRequests(displaySet));
+
   }
 
   private _moveImageIdToLoadedSet(imageId: string): boolean {

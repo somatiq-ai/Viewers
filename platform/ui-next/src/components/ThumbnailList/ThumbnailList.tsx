@@ -34,7 +34,8 @@ const ThumbnailList = ({
         {thumbnailItems.length > 0 && (
           <div
             id="ohif-thumbnail-list"
-            className="bg-bkg-low grid grid-cols-[repeat(auto-fit,_minmax(0,135px))] place-items-start gap-[4px]"
+            className="bg-bkg-low grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-[repeat(auto-fit,_minmax(220px,1fr))] xl:grid-cols-[repeat(auto-fit,_minmax(220px,1fr))] 2xl:grid-cols-[repeat(auto-fit,_minmax(220px,1fr))] place-items-stretch gap-[8px]"
+            style={{ gridAutoRows: '1fr' }}
           >
             {thumbnailItems.map(item => {
               const { displaySetInstanceUID, componentType, numInstances, ...rest } = item;
@@ -62,7 +63,7 @@ const ThumbnailList = ({
         {listItems.length > 0 && (
           <div
             id="ohif-thumbnail-list"
-            className="bg-bkg-low grid grid-cols-[repeat(auto-fit,_minmax(0,275px))] place-items-start gap-[2px]"
+            className="bg-bkg-low grid grid-cols-[repeat(auto-fit,_minmax(275px,1fr))] place-items-stretch gap-[6px]"
           >
             {listItems.map(item => {
               const { displaySetInstanceUID, componentType, numInstances, ...rest } = item;

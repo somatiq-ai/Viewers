@@ -50,9 +50,7 @@ export interface MenuProps {
   showHeaderDivider?: boolean;
   activePanelIndex?: number;
   onVisibilityChange?: (isVisible: boolean) => void;
-  // New props that can be used as alternatives to horizontalDirection and verticalDirection
-  align?: 'start' | 'end' | 'center';
-  side?: 'top' | 'bottom' | 'left' | 'right';
+  horizontalDirection?: HorizontalDirection;
   children: ReactNode;
 }
 type MenuContextProps = {
@@ -60,7 +58,6 @@ type MenuContextProps = {
   hideMenu: () => void;
   addItemPanel: (index: number, label: string) => void;
   horizontalDirection: HorizontalDirection;
-  verticalDirection?: VerticalDirection;
   activePanelIndex: number;
 };
 
@@ -79,23 +76,8 @@ const Menu = (props: MenuProps) => {
     preventHideMenu,
     menuClassName,
     menuStyle,
-    align,
-    side,
+    horizontalDirection = HorizontalDirection.LeftToRight,
   } = props;
-
-  // Derive horizontalDirection and verticalDirection from align and side if provided
-  let horizontalDirection = HorizontalDirection.LeftToRight;
-  let verticalDirection = VerticalDirection.BottomToTop;
-
-  if (align !== undefined) {
-    horizontalDirection =
-      align === 'start' ? HorizontalDirection.LeftToRight : HorizontalDirection.RightToLeft;
-  }
-
-  if (side !== undefined) {
-    verticalDirection =
-      side === 'bottom' ? VerticalDirection.TopToBottom : VerticalDirection.BottomToTop;
-  }
 
   const [isMenuVisible, setIsMenuVisible] = useState(isVisible);
 
@@ -107,15 +89,6 @@ const Menu = (props: MenuProps) => {
     { props, activePanelIndex: activePanelIndex || 0 },
   ]);
   const [itemPanelLabels, setItemPanelLabels] = useState<Array<string>>([]);
-
-  // If the props change for the this top level menu then we have to update the menu path
-  // because the props to be rendered are maintained in the state.
-  useEffect(() => {
-    setMenuPath(menuPath => [
-      { props, activePanelIndex: activePanelIndex || 0 },
-      ...menuPath.slice(1),
-    ]);
-  }, [activePanelIndex, props]);
 
   const hideMenu = useCallback(() => {
     if (preventHideMenu) {
@@ -178,7 +151,6 @@ const Menu = (props: MenuProps) => {
           addItemPanel,
           activePanelIndex: currentMenuActivePanelIndex,
           horizontalDirection,
-          verticalDirection,
         }}
       >
         {isMenuVisible && (

@@ -28,14 +28,13 @@ interface PanelSectionContentProps {
 export const PanelSection: React.FC<PanelSectionProps> & {
   Header: React.FC<PanelSectionHeaderProps>;
   Content: React.FC<PanelSectionContentProps>;
-} = ({ children, defaultOpen = true, className, ...props }) => {
+} = ({ children, defaultOpen = true, className }) => {
   return (
     <Accordion
       type="single"
       collapsible
       defaultValue={defaultOpen ? 'item' : undefined}
       className={cn('flex-shrink-0 overflow-hidden', className)}
-      {...props}
     >
       <AccordionItem
         value="item"

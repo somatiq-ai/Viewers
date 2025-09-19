@@ -1,26 +1,14 @@
 export default function createAndDownloadTMTVReport(segReport, additionalReportRows, options = {}) {
   const firstReport = segReport[Object.keys(segReport)[0]];
   const columns = Object.keys(firstReport);
-  const csv = [
-    columns
-      .map(column =>
-        column.toLowerCase().startsWith('namedstats_') ? column.substring(11) : column
-      )
-      .join(','),
-  ];
+  const csv = [columns.join(',')];
 
   Object.values(segReport).forEach(segmentation => {
     const row = [];
     columns.forEach(column => {
       // if it is array then we need to replace , with space to avoid csv parsing error
       row.push(
-        segmentation[column] && typeof segmentation[column] === 'object'
-          ? Array.isArray(segmentation[column])
-            ? segmentation[column].join(' ')
-            : segmentation[column].value && Array.isArray(segmentation[column].value)
-              ? segmentation[column].value.join(' ')
-              : (segmentation[column].value ?? segmentation[column])
-          : segmentation[column]
+        Array.isArray(segmentation[column]) ? segmentation[column].join(' ') : segmentation[column]
       );
     });
     csv.push(row.join(','));

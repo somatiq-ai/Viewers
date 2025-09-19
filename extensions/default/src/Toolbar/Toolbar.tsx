@@ -1,22 +1,15 @@
 import React from 'react';
 import { useToolbar } from '@ohif/core';
 
-interface ToolbarProps {
+type ToolbarProps = {
+  servicesManager: AppTypes.ServicesManager;
   buttonSection?: string;
-  viewportId?: string;
-  location?: number;
-}
+  allowedIds?: string[];
+};
 
-export function Toolbar({ buttonSection = 'primary', viewportId, location }: ToolbarProps) {
-  const {
-    toolbarButtons,
-    onInteraction,
-    isItemOpen,
-    isItemLocked,
-    openItem,
-    closeItem,
-    toggleLock,
-  } = useToolbar({
+export function Toolbar({ servicesManager, buttonSection = 'primary', allowedIds }: ToolbarProps) {
+  const { toolbarButtons, onInteraction } = useToolbar({
+    servicesManager,
     buttonSection,
   });
 
@@ -26,37 +19,21 @@ export function Toolbar({ buttonSection = 'primary', viewportId, location }: Too
 
   return (
     <>
-      {toolbarButtons?.map(toolDef => {
+      {toolbarButtons
+        ?.filter(toolDef => (allowedIds ? allowedIds.includes(toolDef?.id) : true))
+        .map(toolDef => {
         if (!toolDef) {
           return null;
         }
 
         const { id, Component, componentProps } = toolDef;
-
-        // Enhanced props with state and actions - respecting viewport specificity
-        const enhancedProps = {
-          ...componentProps,
-          isOpen: isItemOpen(id, viewportId),
-          isLocked: isItemLocked(id, viewportId),
-          onOpen: () => openItem(id, viewportId),
-          onClose: () => closeItem(id, viewportId),
-          onToggleLock: () => toggleLock(id, viewportId),
-          viewportId,
-        };
-
         const tool = (
           <Component
             key={id}
             id={id}
-            location={location}
-            onInteraction={args => {
-              onInteraction({
-                ...args,
-                itemId: id,
-                viewportId,
-              });
-            }}
-            {...enhancedProps}
+            onInteraction={onInteraction}
+            servicesManager={servicesManager}
+            {...componentProps}
           />
         );
 

@@ -9,7 +9,7 @@ export default function PanelRoiThresholdSegmentation() {
   const { commandsManager, servicesManager } = useSystem();
   const { segmentationService } = servicesManager.services;
   const { segmentationsWithRepresentations: segmentationsInfo } =
-    useActiveViewportSegmentationRepresentations();
+    useActiveViewportSegmentationRepresentations({ servicesManager });
 
   const segmentationIds = segmentationsInfo?.map(info => info.segmentation.segmentationId) || [];
   const segmentations = segmentationsInfo?.map(info => info.segmentation) || [];
@@ -78,7 +78,6 @@ export default function PanelRoiThresholdSegmentation() {
           </div>
           <div className="flex items-center">
             <Button
-              dataCY="exportTmtvCsvReport"
               size="sm"
               variant="ghost"
               className="text-blue-500"

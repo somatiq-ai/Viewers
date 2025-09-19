@@ -256,39 +256,33 @@ function createDicomJSONApi(dicomJsonConfig) {
       const images = displaySet.images;
       const imageIds = [];
 
-      if (!Array.isArray(images) || !images.length) {
+      if (!images) {
         return imageIds;
       }
 
       const { StudyInstanceUID, SeriesInstanceUID } = displaySet;
-      const study = findStudies('StudyInstanceUID', StudyInstanceUID)?.[0];
-      const series = study?.series?.find(s => s.SeriesInstanceUID === SeriesInstanceUID);
+      const study = findStudies('StudyInstanceUID', StudyInstanceUID)[0];
+      const series = study.series.find(s => s.SeriesInstanceUID === SeriesInstanceUID) || [];
 
       const instanceMap = new Map();
-      const seriesInstances = Array.isArray(series?.instances) ? series.instances : [];
-      if (seriesInstances.length) {
-        seriesInstances.forEach(instance => {
-          if (instance?.metadata?.SOPInstanceUID) {
-            const { metadata, url } = instance;
-            const existingInstances = instanceMap.get(metadata.SOPInstanceUID) || [];
-            existingInstances.push({ ...metadata, url });
-            instanceMap.set(metadata.SOPInstanceUID, existingInstances);
-          }
-        });
-      }
+      series.instances.forEach(instance => {
+        if (instance?.metadata?.SOPInstanceUID) {
+          const { metadata, url } = instance;
+          const existingInstances = instanceMap.get(metadata.SOPInstanceUID) || [];
+          existingInstances.push({ ...metadata, url });
+          instanceMap.set(metadata.SOPInstanceUID, existingInstances);
+        }
+      });
 
-      images.forEach(instance => {
+      displaySet.images.forEach(instance => {
         const NumberOfFrames = instance.NumberOfFrames || 1;
         const instances = instanceMap.get(instance.SOPInstanceUID) || [instance];
         for (let i = 0; i < NumberOfFrames; i++) {
-          const inst = instances[Math.min(i, instances.length - 1)];
-          const imageId =
-            inst?.imageId ||
-            getImageId({
-              instance: inst,
-              frame: NumberOfFrames > 1 ? i : undefined,
-              config: dicomJsonConfig,
-            });
+          const imageId = getImageId({
+            instance: instances[Math.min(i, instances.length - 1)],
+            frame: NumberOfFrames > 1 ? i : undefined,
+            config: dicomJsonConfig,
+          });
           imageIds.push(imageId);
         }
       });

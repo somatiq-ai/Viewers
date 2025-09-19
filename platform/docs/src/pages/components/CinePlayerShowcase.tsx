@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import useIsBrowser from '@docusaurus/useIsBrowser';
+import CinePlayer from '../../../../ui-next/src/components/CinePlayer/CinePlayer';
 import ShowcaseRow from './ShowcaseRow';
 
 /**
@@ -8,14 +8,6 @@ import ShowcaseRow from './ShowcaseRow';
 export default function CinePlayerShowcase() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [fps, setFps] = useState(24);
-  const isBrowser = useIsBrowser();
-
-  // If not browser, return null to avoid SSR parse errors
-  if (!isBrowser) {
-    return null;
-  }
-
-  const { default: CinePlayer } = require('../../../../ui-next/src/components/CinePlayer/CinePlayer');
 
   return (
     <ShowcaseRow

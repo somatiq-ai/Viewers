@@ -1,14 +1,19 @@
 export default {
   cornerstoneViewportClickCommands: {
     doubleClick: ['toggleOneUp'],
-    button1: ['closeContextMenu'],
-    button3: [
+    button1: [
+      'closeContextMenu',
       {
-        commandName: 'showCornerstoneContextMenu',
+        commandName: 'toggleCrosshairsAndReferenceLines',
         commandOptions: {
           requireNearbyToolData: true,
-          menuId: 'measurementsContextMenu',
         },
+      },
+    ],
+    button3: [
+      {
+        commandName: 'showSpinnerContextMenu',
+        commandOptions: {},
       },
     ],
   },

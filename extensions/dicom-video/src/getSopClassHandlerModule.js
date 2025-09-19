@@ -1,6 +1,5 @@
 import { SOPClassHandlerId } from './id';
 import { utils } from '@ohif/core';
-import i18n from '@ohif/i18n';
 import { utilities as csUtils, Enums as csEnums } from '@cornerstonejs/core';
 
 const SOP_CLASS_UIDS = {
@@ -32,8 +31,6 @@ const supportedTransferSyntaxUIDs = Object.values(SupportedTransferSyntaxes);
 
 const _getDisplaySetsFromSeries = (instances, servicesManager, extensionManager) => {
   const dataSource = extensionManager.getActiveDataSource()[0];
-  const thumbnailSrc = null;
-  console.warn('dataSource=', dataSource);
   return instances
     .filter(metadata => {
       const tsuid =
@@ -77,17 +74,22 @@ const _getDisplaySetsFromSeries = (instances, servicesManager, extensionManager)
         referencedImages: null,
         measurements: null,
         viewportType: csEnums.ViewportType.VIDEO,
+        // The videoUrl is deprecated, the preferred URL is renderedUrl
+        videoUrl,
+        renderedUrl: videoUrl,
         instances: [instance],
-        getThumbnailSrc: dataSource.retrieve.getGetThumbnailSrc?.(instance),
-        thumbnailSrc,
+        thumbnailSrc: dataSource.retrieve.directURL({
+          instance,
+          defaultPath: '/thumbnail',
+          defaultType: 'image/jpeg',
+          tag: 'Absent',
+        }),
         imageIds: [imageId],
         isDerivedDisplaySet: true,
         isLoaded: false,
         sopClassUids,
         numImageFrames: NumberOfFrames,
         instance,
-        supportsWindowLevel: true,
-        label: SeriesDescription || `${i18n.t('Series')} ${SeriesNumber} - ${i18n.t(Modality)}`,
       };
       csUtils.genericMetadataProvider.add(imageId, {
         type: 'imageUrlModule',
@@ -97,8 +99,7 @@ const _getDisplaySetsFromSeries = (instances, servicesManager, extensionManager)
     });
 };
 
-export default function getSopClassHandlerModule(params) {
-  const { servicesManager, extensionManager } = params;
+export default function getSopClassHandlerModule({ servicesManager, extensionManager }) {
   const getDisplaySetsFromSeries = instances => {
     return _getDisplaySetsFromSeries(instances, servicesManager, extensionManager);
   };

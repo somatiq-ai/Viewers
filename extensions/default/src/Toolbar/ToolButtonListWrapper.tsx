@@ -10,9 +10,13 @@ import {
 import { useToolbar } from '@ohif/core/src';
 
 interface ToolButtonListWrapperProps {
+  groupId: string;
   buttonSection: string;
-  onInteraction?: (details: { itemId: string; commands?: Record<string, unknown> }) => void;
-  id: string;
+  onInteraction?: (details: {
+    groupId: string;
+    itemId: string;
+    commands?: Record<string, unknown>;
+  }) => void;
 }
 
 /**
@@ -21,7 +25,10 @@ interface ToolButtonListWrapperProps {
  * @returns Component
  * // test
  */
-export default function ToolButtonListWrapper({ buttonSection, id }: ToolButtonListWrapperProps) {
+export default function ToolButtonListWrapper({
+  groupId,
+  buttonSection,
+}: ToolButtonListWrapperProps) {
   const { onInteraction, toolbarButtons } = useToolbar({
     buttonSection,
   });
@@ -40,21 +47,21 @@ export default function ToolButtonListWrapper({ buttonSection, id }: ToolButtonL
     <ToolButtonList>
       <ToolButtonListDefault>
         <div
-          data-cy={`${id}-split-button-primary`}
+          data-cy={`${groupId}-split-button-primary`}
           data-tool={primary.id}
           data-active={primary.isActive}
         >
           <ToolButton
             {...primary}
             onInteraction={({ itemId }) =>
-              onInteraction?.({ id, itemId, commands: primary.commands })
+              onInteraction?.({ groupId, itemId, commands: primary.commands })
             }
             className={primary.className}
           />
         </div>
       </ToolButtonListDefault>
       <ToolButtonListDivider className={primary.isActive ? 'opacity-0' : 'opacity-100'} />
-      <div data-cy={`${id}-split-button-secondary`}>
+      <div data-cy={`${groupId}-split-button-secondary`}>
         <ToolButtonListDropDown>
           {items.map(item => {
             return (
@@ -64,7 +71,9 @@ export default function ToolButtonListWrapper({ buttonSection, id }: ToolButtonL
                 data-cy={item.id}
                 data-tool={item.id}
                 data-active={item.isActive}
-                onSelect={() => onInteraction?.({ id, itemId: item.id, commands: item.commands })}
+                onSelect={() =>
+                  onInteraction?.({ groupId, itemId: item.id, commands: item.commands })
+                }
               >
                 <span className="pl-1">{item.label || item.tooltip || item.id}</span>
               </ToolButtonListItem>

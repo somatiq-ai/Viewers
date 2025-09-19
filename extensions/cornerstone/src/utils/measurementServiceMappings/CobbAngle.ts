@@ -92,11 +92,6 @@ function getMappedAnnotations(annotation, displaySetService) {
   const { metadata, data } = annotation;
   const { cachedStats } = data;
   const { referencedImageId } = metadata;
-
-  if( !cachedStats ) {
-    return;
-  }
-
   const targets = Object.keys(cachedStats);
 
   if (!targets.length) {

@@ -1,6 +1,6 @@
 import { useState, useCallback, useLayoutEffect, useRef } from 'react';
 import { getPanelElement, getPanelGroupElement } from 'react-resizable-panels';
-import { getPanelGroupDefinition } from './constants/panels';
+import { panelGroupDefinition } from './constants/panels';
 
 /**
  * Set the minimum and maximum css style width attributes for the given element.
@@ -30,21 +30,8 @@ const useResizablePanels = (
   rightPanelClosed,
   setRightPanelClosed,
   hasLeftPanels,
-  hasRightPanels,
-  leftPanelInitialExpandedWidth,
-  rightPanelInitialExpandedWidth,
-  leftPanelMinimumExpandedWidth,
-  rightPanelMinimumExpandedWidth
+  hasRightPanels
 ) => {
-  const [panelGroupDefinition] = useState(
-    getPanelGroupDefinition({
-      leftPanelInitialExpandedWidth,
-      rightPanelInitialExpandedWidth,
-      leftPanelMinimumExpandedWidth,
-      rightPanelMinimumExpandedWidth,
-    })
-  );
-
   const [leftPanelExpandedWidth, setLeftPanelExpandedWidth] = useState(
     panelGroupDefinition.left.initialExpandedWidth
   );

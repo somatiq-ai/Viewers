@@ -38,35 +38,28 @@ function HeaderPatientInfo({ servicesManager, appConfig }: withAppTypes) {
   const formattedPatientName = formatWithEllipsis(patientInfo.PatientName, 27);
   const formattedPatientID = formatWithEllipsis(patientInfo.PatientID, 15);
 
+
+  console.log({patientInfo});
   return (
     <div
-      className="hover:bg-primary-dark flex cursor-pointer items-center justify-center gap-1 rounded-lg"
-      onClick={handleOnClick}
+      className="flex cursor-pointer items-center justify-center gap-1 rounded-lg"
+      // onClick={handleOnClick}
     >
-      {isMixedPatients ? (
+      {/* {isMixedPatients ? (
         <Icons.MultiplePatients className="text-primary" />
       ) : (
         <Icons.Patient className="text-primary" />
-      )}
+      )} */}
       <div className="flex flex-col justify-center">
-        {expanded ? (
-          <>
-            <div className="self-start text-[13px] font-bold text-white">
-              {formattedPatientName}
+
+            <div className="self-start text-[14px] font-bold text-white">
+              {formattedPatientName} {patientInfo.PatientAge}
             </div>
-            <div className="text-aqua-pale flex gap-2 text-[11px]">
+            <div className="text-aqua-pale flex gap-2 text-[12px]">
               <div>{formattedPatientID}</div>
               <div>{patientInfo.PatientSex}</div>
-              <div>{patientInfo.PatientDOB}</div>
             </div>
-          </>
-        ) : (
-          <div className="text-primary self-center text-[13px]">
-            {isMixedPatients ? 'Multiple Patients' : 'Patient'}
-          </div>
-        )}
       </div>
-      <Icons.ArrowLeft className={`text-primary ${expanded ? 'rotate-180' : ''}`} />
     </div>
   );
 }

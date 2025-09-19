@@ -1,8 +1,6 @@
 ---
 sidebar_position: 1
 sidebar_label: Overview
-title: UI Services Overview
-summary: Overview of OHIF's UI services architecture, which enables consistent UI interactions across the application through React context providers and service implementations, allowing extensions to leverage components like modals, notifications, and dialogs.
 ---
 
 # Overview

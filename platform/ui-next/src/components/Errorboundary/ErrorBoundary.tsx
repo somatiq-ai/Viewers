@@ -7,7 +7,7 @@ import { Button } from '../Button/Button';
 import { useNotification } from '../../contextProviders';
 
 const isProduction = process.env.NODE_ENV === 'production';
-
+const isErrorsDisabled = window.config?.disableErrors;
 /**
  * Parses an error stack trace to extract important information
  * Extracts the first function name from the stack trace
@@ -155,6 +155,11 @@ const DefaultFallback = ({
   };
 
   useEffect(() => {
+    // Don't show error notifications if errors are disabled
+    if (isErrorsDisabled) {
+      return;
+    }
+
     // Use a stable ID based on error message to support deduplication
     const errorId = `error-${errorTitle || error.message}`;
 
@@ -246,9 +251,11 @@ const DefaultFallback = ({
 const ErrorBoundary = ({
   context = 'OHIF',
   onReset = () => {},
-  onError = _error => {},
+  onError = () => {},
   fallbackComponent: FallbackComponent = DefaultFallback,
   children,
+  fallbackRoute = null,
+  isPage,
 }: ErrorBoundaryProps) => {
   const [error, setError] = useState<ErrorBoundaryError | null>(null);
 
@@ -274,8 +281,8 @@ const ErrorBoundary = ({
       event.preventDefault();
       clearTimeout(errorTimeout);
       errorTimeout = setTimeout(() => {
-        setError(event.reason || event);
-        onErrorHandler(event.reason || event, null);
+        setError(event.reason);
+        onErrorHandler(event.reason, null);
       }, 100);
     };
 
@@ -289,10 +296,7 @@ const ErrorBoundary = ({
     };
   }, []);
 
-  const onErrorHandler = (
-    error: ErrorBoundaryError | ErrorEvent,
-    componentStack: string | null
-  ) => {
+  const onErrorHandler = (error: ErrorBoundaryError, componentStack: string | null) => {
     console.debug(`${context} Error Boundary`, error, componentStack, context);
     onError(error, componentStack || '', context);
   };

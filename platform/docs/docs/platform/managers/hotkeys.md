@@ -1,8 +1,6 @@
 ---
 sidebar_position: 5
 sidebar_label: Hotkeys Manager
-title: Hotkeys Manager
-summary: Documentation for the HotkeysManager class which handles keyboard shortcut bindings to commands, allowing configuration of global and mode-specific keyboard shortcuts with user customization capabilities.
 ---
 # Hotkeys Managers
 

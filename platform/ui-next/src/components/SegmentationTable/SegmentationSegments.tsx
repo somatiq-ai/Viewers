@@ -16,7 +16,6 @@ export const SegmentationSegments = ({ children = null }: { children?: React.Rea
     onSegmentEdit,
     onSegmentDelete,
     data,
-    showSegmentIndex = true,
   } = useSegmentationTableContext('SegmentationSegments');
 
   // Try to get segmentation data from expanded context first, then fall back to table context
@@ -77,7 +76,7 @@ export const SegmentationSegments = ({ children = null }: { children?: React.Rea
           const DataRowComponent = (
             <DataRow
               key={segmentIndex}
-              number={showSegmentIndex ? segmentIndex : null}
+              number={segmentIndex}
               title={label}
               // details={displayText}
               description={displayText}

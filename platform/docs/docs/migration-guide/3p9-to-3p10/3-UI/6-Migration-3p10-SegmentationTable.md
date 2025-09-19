@@ -1,6 +1,5 @@
 ---
 title: Segmentation Table
-summary: Migration guide for the refactored SegmentationTable component in OHIF 3.10, covering changes to the context system, compound component pattern adoption, replacement of SelectorHeader, and introduction of segment statistics features.
 ---
 
 

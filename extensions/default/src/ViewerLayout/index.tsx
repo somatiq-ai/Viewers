@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useEffect, useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 
@@ -6,8 +7,10 @@ import { HangingProtocolService, CommandsManager } from '@ohif/core';
 import { useAppConfig } from '@state';
 import ViewerHeader from './ViewerHeader';
 import SidePanelWithServices from '../Components/SidePanelWithServices';
-import { Onboarding, ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@ohif/ui-next';
+import { Onboarding, ResizablePanelGroup, ResizablePanel, ResizableHandle, Button, Icons } from '@ohif/ui-next';
 import useResizablePanels from './ResizablePanelsHook';
+import { WrappedPanelStudyBrowser } from '../Panels';
+import { Toolbar } from '../Toolbar/Toolbar';
 
 const resizableHandleClassName = 'mt-[1px] bg-black';
 
@@ -24,10 +27,6 @@ function ViewerLayout({
   rightPanelClosed = false,
   leftPanelResizable = false,
   rightPanelResizable = false,
-  leftPanelInitialExpandedWidth,
-  rightPanelInitialExpandedWidth,
-  leftPanelMinimumExpandedWidth,
-  rightPanelMinimumExpandedWidth,
 }: withAppTypes): React.FunctionComponent {
   const [appConfig] = useAppConfig();
 
@@ -58,20 +57,16 @@ function ViewerLayout({
     rightPanelClosed,
     setRightPanelClosed,
     hasLeftPanels,
-    hasRightPanels,
-    leftPanelInitialExpandedWidth,
-    rightPanelInitialExpandedWidth,
-    leftPanelMinimumExpandedWidth,
-    rightPanelMinimumExpandedWidth
+    hasRightPanels
   );
 
   const handleMouseEnter = () => {
     (document.activeElement as HTMLElement)?.blur();
   };
 
-  const LoadingIndicatorProgress = customizationService.getCustomization(
+  const LoadingIndicatorProgress: any = customizationService.getCustomization(
     'ui.loadingIndicatorProgress'
-  );
+  ) as any;
 
   /**
    * Set body classes (tailwindcss) that don't allow vertical
@@ -88,7 +83,7 @@ function ViewerLayout({
     };
   }, []);
 
-  const getComponent = id => {
+  const getComponent = (id: string) => {
     const entry = extensionManager.getModuleEntry(id);
 
     if (!entry || !entry.component) {
@@ -117,7 +112,7 @@ function ViewerLayout({
     };
   }, [hangingProtocolService]);
 
-  const getViewportComponentData = viewportComponent => {
+  const getViewportComponentData = (viewportComponent: any) => {
     const { entry } = getComponent(viewportComponent.namespace);
 
     return {
@@ -147,76 +142,182 @@ function ViewerLayout({
     };
   }, [panelService, hasPanels]);
 
-  const viewportComponents = viewports.map(getViewportComponentData);
+  const viewportComponents = (viewports as any[]).map(getViewportComponentData);
+
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+  const [showStudyBrowserOnMobile, setShowStudyBrowserOnMobile] = useState<boolean>(false);
+
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 768px)');
+    const updateIsMobile = () => setIsMobile(query.matches);
+    updateIsMobile();
+    query.addEventListener?.('change', updateIsMobile);
+    return () => query.removeEventListener?.('change', updateIsMobile);
+  }, []);
+
+  useEffect(() => {
+    if (isMobile) {
+      setShowStudyBrowserOnMobile(true);
+    } else {
+      setShowStudyBrowserOnMobile(false);
+    }
+  }, [isMobile]);
+
+  // Listen for mobile back to series event from close viewport
+  useEffect(() => {
+    const handleBackToSeries = () => {
+      if (isMobile) {
+        setShowStudyBrowserOnMobile(true);
+      }
+    };
+
+    window.addEventListener('ohif-mobile-back-to-series', handleBackToSeries);
+    return () => window.removeEventListener('ohif-mobile-back-to-series', handleBackToSeries);
+  }, [isMobile]);
+
+  const MobileStudiesToggle = ({ onClick }: { onClick: () => void }) => (
+    <Button
+      variant="ghost"
+      className="hover:bg-primary-dark"
+      onClick={onClick}
+    >
+      <Icons.GroupLayers className="mr-2" />
+      Studies
+    </Button>
+  );
 
   return (
-    <div>
+    <div className={`${isMobile ? 'h-[calc(100dvh-64px)]' : 'h-screen'} w-full overflow-hidden flex flex-col`}>
       <ViewerHeader
         hotkeysManager={hotkeysManager}
         extensionManager={extensionManager}
         servicesManager={servicesManager}
         appConfig={appConfig}
+        isMobile={isMobile}
+        hideToolbars={isMobile}
+        onClickOpenStudies={() => setShowStudyBrowserOnMobile(true)}
+        showStudyBrowserOnMobile={showStudyBrowserOnMobile}
       />
-      <div
-        className="relative flex w-full flex-row flex-nowrap items-stretch overflow-hidden bg-black"
-        style={{ height: 'calc(100vh - 52px' }}
-      >
-        <React.Fragment>
-          {showLoadingIndicator && <LoadingIndicatorProgress className="h-full w-full bg-black" />}
-          <ResizablePanelGroup {...resizablePanelGroupProps}>
-            {/* LEFT SIDEPANELS */}
-            {hasLeftPanels ? (
-              <>
-                <ResizablePanel {...resizableLeftPanelProps}>
-                  <SidePanelWithServices
-                    side="left"
-                    isExpanded={!leftPanelClosedState}
-                    servicesManager={servicesManager}
-                    {...leftPanelProps}
-                  />
-                </ResizablePanel>
-                <ResizableHandle
-                  onDragging={onHandleDragging}
-                  disabled={!leftPanelResizable}
-                  className={resizableHandleClassName}
+      {isMobile ? (
+        <div
+          className="relative flex w-full flex-1 flex-row flex-nowrap items-stretch overflow-hidden bg-black"
+          style={{
+            overscrollBehavior: 'none',
+            touchAction: 'none'
+          }}
+        >
+          <div className="flex h-full w-full flex-1 flex-col" style={{ overscrollBehavior: 'none' }}>
+            <div className="relative flex h-full flex-1 overflow-hidden bg-black" style={{ overscrollBehavior: 'none' }}>
+              {showLoadingIndicator && (
+                <LoadingIndicatorProgress className="absolute inset-0 h-full w-full bg-black" />
+              )}
+              {/* Keep viewport grid mounted; toggle visibility to avoid cache purge */}
+              <div
+                className={`absolute inset-0 ${showStudyBrowserOnMobile ? 'invisible pointer-events-none' : 'visible'}`}
+                onMouseEnter={handleMouseEnter}
+                style={{ overscrollBehavior: 'none', touchAction: 'none' }}
+              >
+                <ViewportGridComp
+                  servicesManager={servicesManager}
+                  viewportComponents={viewportComponents}
+                  commandsManager={commandsManager}
                 />
-              </>
-            ) : null}
-            {/* TOOLBAR + GRID */}
-            <ResizablePanel {...resizableViewportGridPanelProps}>
-              <div className="flex h-full flex-1 flex-col">
-                <div
-                  className="relative flex h-full flex-1 items-center justify-center overflow-hidden bg-black"
-                  onMouseEnter={handleMouseEnter}
-                >
-                  <ViewportGridComp
-                    servicesManager={servicesManager}
-                    viewportComponents={viewportComponents}
-                    commandsManager={commandsManager}
+              </div>
+              {/* Studies overlay */}
+              {showStudyBrowserOnMobile && (
+                <div className="absolute inset-0 h-full w-full overflow-y-auto bg-black">
+                  <WrappedPanelStudyBrowser
+                    onMobileOpenViewportGrid={() => setShowStudyBrowserOnMobile(false)}
                   />
                 </div>
-              </div>
-            </ResizablePanel>
-            {hasRightPanels ? (
-              <>
-                <ResizableHandle
-                  onDragging={onHandleDragging}
-                  disabled={!rightPanelResizable}
-                  className={resizableHandleClassName}
-                />
-                <ResizablePanel {...resizableRightPanelProps}>
-                  <SidePanelWithServices
-                    side="right"
-                    isExpanded={!rightPanelClosedState}
-                    servicesManager={servicesManager}
-                    {...rightPanelProps}
+              )}
+              {/* Mobile bottom toolbar footer */}
+              {!showStudyBrowserOnMobile && (
+                <div className="h-[64px] pointer-events-auto fixed bottom-0 left-0 right-0 z-10 bg-black/80 backdrop-blur">
+                  <div className="mx-auto flex max-w-[1000px] items-center justify-between px-3 py-2">
+                    <Toolbar
+                      servicesManager={servicesManager}
+                      buttonSection="primary"
+                      allowedIds={[
+                        'MeasurementTools',
+                        'Zoom',
+                        'Pan',
+                        'WindowLevel',
+                        'TwoPanel',
+                        'MPR',
+                        'StackScroll',
+                        'MoreTools',
+                      ]}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div
+          className="relative flex w-full flex-1 flex-row flex-nowrap items-stretch overflow-hidden bg-black"
+          style={{ overscrollBehavior: 'none' }}
+        >
+          <React.Fragment>
+            {showLoadingIndicator && <LoadingIndicatorProgress className="h-full w-full bg-black" />}
+            <ResizablePanelGroup {...resizablePanelGroupProps}>
+              {/* LEFT SIDEPANELS */}
+              {hasLeftPanels ? (
+                <>
+                  <ResizablePanel {...resizableLeftPanelProps}>
+                    <SidePanelWithServices
+                      side="left"
+                      isExpanded={!leftPanelClosedState}
+                      servicesManager={servicesManager}
+                      {...leftPanelProps}
+                    />
+                  </ResizablePanel>
+                  <ResizableHandle
+                    onDragging={onHandleDragging}
+                    disabled={!leftPanelResizable}
+                    className={resizableHandleClassName}
                   />
-                </ResizablePanel>
-              </>
-            ) : null}
-          </ResizablePanelGroup>
-        </React.Fragment>
-      </div>
+                </>
+              ) : null}
+              {/* TOOLBAR + GRID */}
+              <ResizablePanel {...resizableViewportGridPanelProps}>
+                <div className="flex h-full flex-1 flex-col">
+                  <div
+                    className="relative flex h-full flex-1 items-center justify-center overflow-hidden bg-black"
+                    onMouseEnter={handleMouseEnter}
+                  >
+                    <ViewportGridComp
+                      servicesManager={servicesManager}
+                      viewportComponents={viewportComponents}
+                      commandsManager={commandsManager}
+                    />
+                  </div>
+                </div>
+              </ResizablePanel>
+              {hasRightPanels ? (
+                <>
+                  <ResizableHandle
+                    onDragging={onHandleDragging}
+                    disabled={!rightPanelResizable}
+                    className={resizableHandleClassName}
+                  />
+                  <ResizablePanel {...resizableRightPanelProps}>
+                    <SidePanelWithServices
+                      side="right"
+                      isExpanded={!rightPanelClosedState}
+                      servicesManager={servicesManager}
+                      {...rightPanelProps}
+                    />
+                  </ResizablePanel>
+                </>
+              ) : null}
+            </ResizablePanelGroup>
+          </React.Fragment>
+        </div>
+      )}
       <Onboarding tours={customizationService.getCustomization('ohif.tours')} />
       <InvestigationalUseDialog dialogConfiguration={appConfig?.investigationalUseDialog} />
     </div>

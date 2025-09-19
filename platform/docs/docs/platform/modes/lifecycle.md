@@ -1,8 +1,6 @@
 ---
 sidebar_position: 2
 sidebar_label: Lifecycle Hooks
-title: Mode Lifecycle Hooks
-summary: Documentation for OHIF Mode's lifecycle hooks (onModeInit, onModeEnter, and onModeExit), which allow customization of initialization, resource setup, and cleanup when entering or exiting viewer modes.
 ---
 
 # Modes: Lifecycle Hooks

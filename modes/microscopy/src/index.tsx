@@ -47,10 +47,10 @@ function modeFactory({ modeConfiguration }) {
     onModeEnter: ({ servicesManager }: withAppTypes) => {
       const { toolbarService } = servicesManager.services;
 
-      toolbarService.register(toolbarButtons);
-      toolbarService.updateSection('primary', ['MeasurementTools', 'dragPan', 'TagBrowser']);
+      toolbarService.addButtons(toolbarButtons);
+      toolbarService.createButtonSection('primary', ['MeasurementTools', 'dragPan', 'TagBrowser']);
 
-      toolbarService.updateSection('MeasurementTools', [
+      toolbarService.createButtonSection('measurementSection', [
         'line',
         'point',
         'polygon',

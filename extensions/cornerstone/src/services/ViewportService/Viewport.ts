@@ -316,10 +316,6 @@ class ViewportInfo {
     return this.viewportOptions.orientation;
   }
 
-  public setOrientation(orientation: Enums.OrientationAxis): void {
-    this.viewportOptions.orientation = orientation;
-  }
-
   public getDisplayArea(): Types.DisplayArea {
     return this.viewportOptions.displayArea;
   }

@@ -4,8 +4,6 @@ import { Toolbox } from '@ohif/extension-default';
 import PanelTMTV from './Panels/PanelTMTV';
 
 function getPanelModule({ commandsManager, extensionManager, servicesManager }) {
-  const { toolbarService } = servicesManager.services;
-
   const wrappedPanelPetSuv = () => {
     return <PanelPetSUV />;
   };
@@ -13,7 +11,7 @@ function getPanelModule({ commandsManager, extensionManager, servicesManager }) 
   const wrappedROIThresholdToolbox = () => {
     return (
       <Toolbox
-        buttonSectionId={toolbarService.sections.roiThresholdToolbox}
+        buttonSectionId="ROIThresholdToolbox"
         title="Threshold Tools"
       />
     );
@@ -27,7 +25,7 @@ function getPanelModule({ commandsManager, extensionManager, servicesManager }) 
     return (
       <>
         <Toolbox
-          buttonSectionId={toolbarService.sections.roiThresholdToolbox}
+          buttonSectionId="ROIThresholdToolbox"
           title="Threshold Tools"
         />
         <PanelTMTV

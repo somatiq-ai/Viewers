@@ -58,10 +58,11 @@ InputRow.Input = ({ className, ...props }) => (
 InputRow.Label.displayName = 'InputRow.Label';
 InputRow.Input.displayName = 'InputRow.Input';
 
-export default function PanelPetSUV() {
-  const { commandsManager, servicesManager } = useSystem();
+export default function PanelPetSUV({ servicesManager }: withAppTypes) {
+  const { commandsManager } = useSystem();
   const { t } = useTranslation('PanelSUV');
-  const { displaySetService, hangingProtocolService } = servicesManager.services;
+  const { displaySetService, toolGroupService, toolbarService, hangingProtocolService } =
+    servicesManager.services;
   const [metadata, setMetadata] = useState(DEFAULT_MEATADATA);
   const [ptDisplaySet, setPtDisplaySet] = useState(null);
 

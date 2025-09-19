@@ -27,7 +27,6 @@ const tracked = {
 
 const dicomsr = {
   sopClassHandler: '@ohif/extension-cornerstone-dicom-sr.sopClassHandlerModule.dicom-sr',
-  sopClassHandler3D: '@ohif/extension-cornerstone-dicom-sr.sopClassHandlerModule.dicom-sr-3d',
   viewport: '@ohif/extension-cornerstone-dicom-sr.viewportModule.dicom-sr',
 };
 
@@ -90,9 +89,9 @@ function modeFactory() {
         '@ohif/extension-test.customizationModule.custom-context-menu',
       ]);
 
-      toolbarService.register(toolbarButtons);
+      toolbarService.addButtons(toolbarButtons);
       console.debug('toolbarButtons', toolbarButtons);
-      toolbarService.updateSection(toolbarService.sections.primary, [
+      toolbarService.createButtonSection('primary', [
         'MeasurementTools',
         'Zoom',
         'WindowLevelGroup',
@@ -104,7 +103,7 @@ function modeFactory() {
         'MoreTools',
       ]);
 
-      toolbarService.updateSection('WindowLevelGroup', [
+      toolbarService.createButtonSection('windowLevelSection', [
         'WindowLevel',
         'Soft tissue',
         'Lung',
@@ -113,42 +112,7 @@ function modeFactory() {
         'Brain',
       ]);
 
-      toolbarService.updateSection(toolbarService.sections.viewportActionMenu.topLeft, [
-        'orientationMenu',
-        'dataOverlayMenu',
-      ]);
-
-      toolbarService.updateSection(toolbarService.sections.viewportActionMenu.bottomMiddle, [
-        'AdvancedRenderingControls',
-      ]);
-
-      toolbarService.updateSection('AdvancedRenderingControls', [
-        'voiManualControlMenu',
-        'Colorbar',
-        'opacityMenu',
-        'thresholdMenu',
-      ]);
-
-      toolbarService.updateSection(toolbarService.sections.viewportActionMenu.topRight, [
-        'modalityLoadBadge',
-        'trackingStatus',
-        'navigationComponent',
-      ]);
-
-      toolbarService.updateSection(toolbarService.sections.viewportActionMenu.bottomLeft, [
-        'windowLevelMenu',
-      ]);
-
-      toolbarService.updateSection('WindowLevelGroup', [
-        'WindowLevel',
-        'Soft tissue',
-        'Lung',
-        'Liver',
-        'Bone',
-        'Brain',
-      ]);
-
-      toolbarService.updateSection('MeasurementTools', [
+      toolbarService.createButtonSection('measurementSection', [
         'Length',
         'Bidirectional',
         'ArrowAnnotate',
@@ -159,7 +123,7 @@ function modeFactory() {
         'LivewireContour',
       ]);
 
-      toolbarService.updateSection('MoreTools', [
+      toolbarService.createButtonSection('moreToolsSection', [
         'Reset',
         'rotate-right',
         'flipHorizontal',
@@ -252,7 +216,7 @@ function modeFactory() {
                 },
                 {
                   namespace: dicomsr.viewport,
-                  displaySetsToDisplay: [dicomsr.sopClassHandler, dicomsr.sopClassHandler3D],
+                  displaySetsToDisplay: [dicomsr.sopClassHandler],
                 },
                 {
                   namespace: dicomvideo.viewport,
@@ -285,7 +249,6 @@ function modeFactory() {
       ohif.sopClassHandler,
       dicompdf.sopClassHandler,
       dicomsr.sopClassHandler,
-      dicomsr.sopClassHandler3D,
     ],
     hotkeys: {
       name: 'basic-test-hotkeys',

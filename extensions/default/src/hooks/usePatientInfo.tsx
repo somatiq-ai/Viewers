@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
-import { utils, useSystem } from '@ohif/core';
+import { utils } from '@ohif/core';
 
 const { formatPN, formatDate } = utils;
 
-function usePatientInfo() {
-  const { servicesManager } = useSystem();
+function usePatientInfo(servicesManager: AppTypes.ServicesManager) {
   const { displaySetService } = servicesManager.services;
 
   const [patientInfo, setPatientInfo] = useState({
@@ -12,6 +11,7 @@ function usePatientInfo() {
     PatientID: '',
     PatientSex: '',
     PatientDOB: '',
+    PatientAge: '',
   });
   const [isMixedPatients, setIsMixedPatients] = useState(false);
 
@@ -30,12 +30,13 @@ function usePatientInfo() {
     setIsMixedPatients(isMixedPatients);
   };
 
-  const updatePatientInfo = ({ displaySetsAdded }) => {
-    if (!displaySetsAdded.length) {
+  const updatePatientInfoFromActive = () => {
+    const active = displaySetService.getActiveDisplaySets();
+    if (!active?.length) {
       return;
     }
-    const displaySet = displaySetsAdded[0];
-    const instance = displaySet?.instances?.[0] || displaySet?.instance;
+    const displaySet = active[0];
+    const instance: any = displaySet?.instances?.[0] || displaySet?.instance;
     if (!instance) {
       return;
     }
@@ -45,16 +46,28 @@ function usePatientInfo() {
       PatientName: instance.PatientName ? formatPN(instance.PatientName) : null,
       PatientSex: instance.PatientSex || null,
       PatientDOB: formatDate(instance.PatientBirthDate) || null,
+      PatientAge: instance.PatientAge || null,
     });
     checkMixedPatients(instance.PatientID || null);
   };
 
   useEffect(() => {
-    const subscription = displaySetService.subscribe(
+    // Initialize immediately (handles remounts when side panel is toggled)
+    updatePatientInfoFromActive();
+
+    // Update when display sets are added or changed
+    const subAdded = displaySetService.subscribe(
       displaySetService.EVENTS.DISPLAY_SETS_ADDED,
-      props => updatePatientInfo(props)
+      () => updatePatientInfoFromActive()
     );
-    return () => subscription.unsubscribe();
+    const subChanged = displaySetService.subscribe(
+      displaySetService.EVENTS.DISPLAY_SETS_CHANGED,
+      () => updatePatientInfoFromActive()
+    );
+    return () => {
+      subAdded.unsubscribe();
+      subChanged.unsubscribe();
+    };
   }, []);
 
   return { patientInfo, isMixedPatients };

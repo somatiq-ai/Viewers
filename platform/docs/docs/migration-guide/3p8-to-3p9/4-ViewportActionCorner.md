@@ -1,7 +1,6 @@
 ---
 id: viewport-action-corner
 title: ViewportActionCorner
-summary: Migration guide for ViewportActionCornerService in OHIF 3.9, introducing the new addComponent and addComponents methods that provide more reliable positioning of multiple components within viewport corners.
 ---
 
 

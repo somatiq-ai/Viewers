@@ -211,11 +211,9 @@ function getDisplayText(mappedAnnotations, displaySet, customizationService) {
   mappedAnnotations.forEach(mappedAnnotation => {
     const { unit, max, SeriesNumber } = mappedAnnotation;
 
-    if (Number.isFinite(max)) {
-      const maxStr = getStatisticDisplayString(max, unit, 'max');
+    const maxStr = getStatisticDisplayString(max, unit, 'max');
 
-      displayText.primary.push(maxStr);
-    }
+    displayText.primary.push(maxStr);
     displayText.secondary.push(`S: ${SeriesNumber}${instanceText}${frameText}`);
   });
 

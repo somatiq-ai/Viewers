@@ -138,7 +138,7 @@ window.config = {
         supportsReject: true,
         supportsStow: true,
         imageRendering: 'wadors',
-        thumbnailRendering: 'thumbnail',
+        thumbnailRendering: 'wadors',
         enableStudyLazyLoad: true,
         supportsFuzzyMatching: false,
         supportsWildcard: true,

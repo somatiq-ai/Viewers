@@ -21,7 +21,7 @@ const LivewireContour = {
    */
   toMeasurement: (
     csToolsEventDetail,
-    displaySetService,
+    DisplaySetService,
     CornerstoneViewportService,
     getValueTypeFromToolType,
     customizationService
@@ -43,16 +43,16 @@ const LivewireContour = {
     }
 
     const { SOPInstanceUID, SeriesInstanceUID, frameNumber, StudyInstanceUID } =
-      getSOPInstanceAttributes(referencedImageId, displaySetService, annotation);
+      getSOPInstanceAttributes(referencedImageId);
 
     let displaySet;
     if (SOPInstanceUID) {
-      displaySet = displaySetService.getDisplaySetForSOPInstanceUID(
+      displaySet = DisplaySetService.getDisplaySetForSOPInstanceUID(
         SOPInstanceUID,
         SeriesInstanceUID
       );
     } else {
-      displaySet = displaySetService.getDisplaySetsForSeries(SeriesInstanceUID);
+      displaySet = DisplaySetService.getDisplaySetsForSeries(SeriesInstanceUID);
     }
 
     return {
@@ -64,14 +64,13 @@ const LivewireContour = {
       metadata,
       frameNumber,
       referenceSeriesUID: SeriesInstanceUID,
-      referencedImageId,
       referenceStudyUID: StudyInstanceUID,
       toolName: metadata.toolName,
       displaySetInstanceUID: displaySet.displaySetInstanceUID,
       label: data.label,
       isLocked,
       isVisible,
-      displayText: getDisplayText(annotation, displaySet, displaySetService),
+      displayText: getDisplayText(annotation, displaySet),
       data: data.cachedStats,
       type: getValueTypeFromToolType(toolName),
       getReport: () => getColumnValueReport(annotation, customizationService),
@@ -123,27 +122,20 @@ function getColumnValueReport(annotation, customizationService) {
  *
  * @param {Object} annotation - The annotation object.
  * @param {Object} displaySet - The display set object.
- * @returns {object} - An object with primary and secondary text arrays.
+ * @returns {string[]} - An array of display text.
  */
-function getDisplayText(annotation, displaySet, displaySetService) {
+function getDisplayText(annotation, displaySet) {
   const { metadata, data } = annotation;
 
-  const displayText = {
-    primary: [],
-    secondary: [],
-  };
-
   if (!data.cachedStats || !data.cachedStats[`imageId:${metadata.referencedImageId}`]) {
-    return displayText;
+    return [];
   }
 
   const { area, areaUnit } = data.cachedStats[`imageId:${metadata.referencedImageId}`];
 
-  const { SOPInstanceUID, frameNumber } = getSOPInstanceAttributes(
-    metadata.referencedImageId,
-    displaySetService,
-    annotation
-  );
+  const { SOPInstanceUID, frameNumber } = getSOPInstanceAttributes(metadata.referencedImageId);
+
+  const displayText = [];
 
   const instance = displaySet.instances.find(image => image.SOPInstanceUID === SOPInstanceUID);
   let InstanceNumber;
@@ -160,14 +152,20 @@ function getDisplayText(annotation, displaySet, displaySetService) {
     seriesText = `S: ${SeriesNumber}${instanceText}${frameText}`;
   }
 
+  const texts = [];
   if (area) {
     const roundedArea = utils.roundNumber(area || 0, 2);
-    displayText.primary.push(`${roundedArea} ${getDisplayUnit(areaUnit)}`);
+    texts.push(`${roundedArea} ${getDisplayUnit(areaUnit)}`);
   }
 
   if (seriesText) {
-    displayText.secondary.push(seriesText);
+    texts.push(seriesText);
   }
+
+  displayText.push({
+    text: texts,
+    series: seriesText,
+  });
 
   return displayText;
 }

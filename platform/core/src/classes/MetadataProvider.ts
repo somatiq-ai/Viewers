@@ -535,17 +535,11 @@ const WADO_IMAGE_LOADER = {
     let imageOrientationPatient;
     if (PixelSpacing) {
       [rowPixelSpacing, columnPixelSpacing] = PixelSpacing;
-      const calibratedPixelSpacing = utilities.calibratedPixelSpacingMetadataProvider.get(
-        'calibratedPixelSpacing',
-        instance.imageId
-      );
-      if (!calibratedPixelSpacing) {
-        calibratedPixelSpacingMetadataProvider.add(instance.imageId, {
-          rowPixelSpacing: parseFloat(PixelSpacing[0]),
-          columnPixelSpacing: parseFloat(PixelSpacing[1]),
-          type,
-        });
-      }
+      calibratedPixelSpacingMetadataProvider.add(instance.imageId, {
+        rowPixelSpacing: parseFloat(PixelSpacing[0]),
+        columnPixelSpacing: parseFloat(PixelSpacing[1]),
+        type,
+      });
     } else {
       rowPixelSpacing = columnPixelSpacing = 1;
       usingDefaultValues = true;
@@ -583,8 +577,8 @@ const WADO_IMAGE_LOADER = {
       sliceThickness: toNumber(instance.SliceThickness),
       sliceLocation: toNumber(instance.SliceLocation),
       pixelSpacing: toNumber(PixelSpacing || 1),
-      rowPixelSpacing: rowPixelSpacing ? toNumber(rowPixelSpacing) : null,
-      columnPixelSpacing: columnPixelSpacing ? toNumber(columnPixelSpacing) : null,
+      rowPixelSpacing,
+      columnPixelSpacing,
       usingDefaultValues,
     };
   },

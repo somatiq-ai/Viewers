@@ -6,8 +6,12 @@ import PROMPT_RESPONSES from './_shared/PROMPT_RESPONSES';
 import { getSRSeriesAndInstanceNumber } from './getSRSeriesAndInstanceNumber';
 import { getSeriesDateTime } from './getCurrentDicomDateTime';
 
-const { filterAnd, filterMeasurementsByStudyUID, filterMeasurementsBySeriesUID } =
-  utils.MeasurementFilters;
+const {
+  filterAnd,
+  filterMeasurementsByStudyUID,
+  filterMeasurementsBySeriesUID,
+  filterPlanarMeasurement,
+} = utils.MeasurementFilters;
 
 async function promptSaveReport({ servicesManager, commandsManager, extensionManager }, ctx, evt) {
   const { measurementService, displaySetService } = servicesManager.services;
@@ -21,7 +25,8 @@ async function promptSaveReport({ servicesManager, commandsManager, extensionMan
     trackedSeries,
     measurementFilter = filterAnd(
       filterMeasurementsByStudyUID(StudyInstanceUID),
-      filterMeasurementsBySeriesUID(trackedSeries)
+      filterMeasurementsBySeriesUID(trackedSeries),
+      filterPlanarMeasurement
     ),
     defaultSaveTitle = 'Create Report',
   } = ctx;

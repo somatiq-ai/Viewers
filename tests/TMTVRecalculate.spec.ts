@@ -1,4 +1,4 @@
-import { expect, test } from 'playwright-test-coverage';
+import { expect, test } from '@playwright/test';
 import { visitStudy, simulateClicksOnElement, getSUV, clearAllAnnotations } from './utils/index';
 
 test.skip('should update SUV values correctly.', async ({ page }) => {

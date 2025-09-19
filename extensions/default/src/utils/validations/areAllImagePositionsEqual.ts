@@ -1,9 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import toNumber from '@ohif/core/src/utils/toNumber';
 import { _getPerpendicularDistance } from '@ohif/core/src/utils/isDisplaySetReconstructable';
-import { utils } from '@ohif/core';
-
-const { calculateScanAxisNormal } = utils;
+import calculateScanAxisNormal from '../calculateScanAxisNormal';
 
 /**
  * Checks if there is a position shift between consecutive frames

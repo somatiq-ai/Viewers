@@ -1,7 +1,5 @@
 ---
 sidebar_position: 2
-title: Build for Production
-summary: Step-by-step guide to building a production-ready version of the OHIF Viewer, including environment setup, code acquisition, dependency restoration, production build creation, and configuration options for deployment.
 ---
 
 # Build for Production

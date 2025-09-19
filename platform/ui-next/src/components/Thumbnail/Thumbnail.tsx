@@ -5,6 +5,8 @@ import { useDrag } from 'react-dnd';
 import { Icons } from '../Icons';
 import { DisplaySetMessageListTooltip } from '../DisplaySetMessageListTooltip';
 import { TooltipTrigger, TooltipContent, Tooltip } from '../Tooltip';
+import { useSystem } from '@ohif/core';
+import { useEffect } from 'react';
 
 /**
  * Display a thumbnail for a display set.
@@ -34,6 +36,28 @@ const Thumbnail = ({
   onClickUntrack = () => {},
   ThumbnailMenuItems = () => {},
 }: withAppTypes): React.ReactNode => {
+  const { servicesManager } = useSystem();
+  const { studyPrefetcherService } = servicesManager.services;
+
+  const [loadingProgressFromPrefetcher, setLoadingProgressFromPrefetcher] = useState(0);
+
+  const _displaySetLoadingStates = studyPrefetcherService._displaySetLoadingStates;
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const currentProgress = _displaySetLoadingStates.get(displaySetInstanceUID)?.loadingProgress || 0;
+      setLoadingProgressFromPrefetcher(currentProgress);
+
+      if (currentProgress >= 1) {
+        clearInterval(interval);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [displaySetInstanceUID, _displaySetLoadingStates]);
+
+
+
   // TODO: We should wrap our thumbnail to create a "DraggableThumbnail", as
   // this will still allow for "drag", even if there is no drop target for the
   // specified item.
@@ -51,10 +75,10 @@ const Thumbnail = ({
     const currentTime = new Date().getTime();
     const tapLength = currentTime - lastTap;
     if (tapLength < 300 && tapLength > 0) {
+      // Double tap detected - open the series
       onDoubleClick(e);
-    } else {
-      onClick(e);
     }
+    // Single tap is ignored to prevent opening series while scrolling
     setLastTap(currentTime);
   };
 
@@ -62,34 +86,23 @@ const Thumbnail = ({
     return (
       <div
         className={classnames(
-          'flex h-full w-full flex-col items-center justify-center gap-[2px] p-[4px]',
+          'flex h-full w-full flex-col items-center justify-center gap-[4px] px-[8px] py-[12px]',
           isActive && 'bg-popover rounded'
         )}
       >
-        <div className="h-[114px] w-[128px]">
-          <div className="relative bg-black">
+        <div className="h-[150px] w-[180px]">
+          <div className="relative">
             {imageSrc ? (
               <img
                 src={imageSrc}
                 alt={imageAltText}
-                className="h-[114px] w-[128px] rounded object-contain"
+                className="h-[150px] w-[180px] rounded object-cover"
                 crossOrigin="anonymous"
               />
             ) : (
-              <div className="bg-background h-[114px] w-[128px] rounded"></div>
+              <div className="bg-background h-[150px] w-[180px] rounded"></div>
             )}
 
-            {/* bottom left */}
-            <div className="absolute bottom-0 left-0 flex h-[14px] items-center gap-[4px] rounded-tr pt-[10px] pb-[10px] pr-[6px] pl-[5px]">
-              <div
-                className={classnames(
-                  'h-[10px] w-[10px] rounded-[2px]',
-                  isActive || isHydratedForDerivedDisplaySet ? 'bg-highlight' : 'bg-primary/65',
-                  loadingProgress && loadingProgress < 1 && 'bg-primary/25'
-                )}
-              ></div>
-              <div className="text-[11px] font-semibold text-white">{modality}</div>
-            </div>
 
             {/* top right */}
             <div className="absolute top-0 right-0 flex items-center gap-[4px]">
@@ -135,18 +148,19 @@ const Thumbnail = ({
             </div>
           </div>
         </div>
-        <div className="flex h-[52px] w-[128px] flex-col justify-start pt-px">
+        <div className="flex h-[60px] w-[180px] flex-col justify-start pt-[4px]">
           <Tooltip>
             <TooltipContent>{description}</TooltipContent>
             <TooltipTrigger>
-              <div className="min-h-[18px] w-[128px] overflow-hidden text-ellipsis whitespace-nowrap pb-0.5 pl-1 text-left text-[12px] font-normal leading-4 text-white">
+              <div className="min-h-[18px] w-[180px] overflow-hidden text-ellipsis whitespace-nowrap pb-0.5 pl-1 text-left text-[13px] font-normal leading-4 text-white">
                 {description}
               </div>
             </TooltipTrigger>
           </Tooltip>
-          <div className="flex h-[12px] items-center gap-[7px] overflow-hidden">
-            <div className="text-muted-foreground pl-1 text-[11px]"> S:{seriesNumber}</div>
-            <div className="text-muted-foreground text-[11px]">
+          <div className="flex h-[14px] items-center gap-[8px] overflow-hidden px-1">
+          <div className="text-[12px] font-semibold text-white flex-shrink-0">{modality}</div>
+            <div className="text-muted-foreground text-[12px] flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap"> S:{seriesNumber}</div>
+            <div className="text-muted-foreground text-[12px] flex-shrink-0 ml-auto">
               <div className="flex items-center gap-[4px]">
                 {countIcon ? (
                   React.createElement(Icons[countIcon] || Icons.MissingIcon, { className: 'w-3' })
@@ -154,6 +168,20 @@ const Thumbnail = ({
                   <Icons.InfoSeries className="w-3" />
                 )}
                 <div>{numInstances}</div>
+              {loadingProgressFromPrefetcher && loadingProgressFromPrefetcher < 1 ? (
+                <div className="flex items-center gap-2 ml-2">
+                  <div className="animate-spin h-[10px] w-[10px] border-2 border-white border-t-transparent rounded-full"></div>
+                  <span className="text-[11px] font-semibold text-white">
+                    {Math.round(loadingProgressFromPrefetcher * 100)}%
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 ml-2">
+                  <span className="text-[11px] font-semibold text-white">
+                    {Math.round(loadingProgressFromPrefetcher * 100)}%
+                  </span>
+                </div>
+              )}
               </div>
             </div>
           </div>
@@ -254,7 +282,7 @@ const Thumbnail = ({
       className={classnames(
         className,
         'bg-muted hover:bg-primary/30 group flex cursor-pointer select-none flex-col rounded outline-none',
-        viewPreset === 'thumbnails' && 'h-[170px] w-[135px]',
+        viewPreset === 'thumbnails' && 'h-[200px] w-[200px] min-w-[200px]',
         viewPreset === 'list' && 'h-[40px] w-full'
       )}
       id={`thumbnail-${displaySetInstanceUID}`}

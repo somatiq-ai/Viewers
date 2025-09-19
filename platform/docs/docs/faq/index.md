@@ -1,7 +1,5 @@
 ---
 id: index
-title: OHIF Viewer FAQ
-summary: Comprehensive list of frequently asked questions about the OHIF Viewer, covering common inquiries about reporting bugs, requesting features, academic collaborations, regulatory status, and obtaining demo studies.
 ---
 
 

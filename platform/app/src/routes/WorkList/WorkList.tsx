@@ -9,8 +9,8 @@ import { useTranslation } from 'react-i18next';
 //
 import filtersMeta from './filtersMeta.js';
 import { useAppConfig } from '@state';
-import { useDebounce, useSearchParams } from '../../hooks';
-import { utils, Types as coreTypes } from '@ohif/core';
+import { useDebounce, useSearchParams } from '@hooks';
+import { utils } from '@ohif/core';
 
 import {
   StudyListExpandedRow,
@@ -18,6 +18,8 @@ import {
   StudyListTable,
   StudyListPagination,
   StudyListFilter,
+  useSessionStorage,
+  InvestigationalUseDialog,
   Button,
   ButtonEnums,
 } from '@ohif/ui';
@@ -30,10 +32,8 @@ import {
   TooltipContent,
   Clipboard,
   useModal,
-  useSessionStorage,
   Onboarding,
   ScrollArea,
-  InvestigationalUseDialog,
 } from '@ohif/ui-next';
 
 import { Types } from '@ohif/ui';
@@ -60,6 +60,7 @@ function WorkList({
   onRefresh,
   servicesManager,
 }: withAppTypes) {
+  const { hotkeyDefinitions, hotkeyDefaults } = hotkeysManager;
   const { show, hide } = useModal();
   const { t } = useTranslation();
   // ~ Modes
@@ -425,7 +426,7 @@ function WorkList({
                     }}
                     // to={`${mode.routeName}/dicomweb?StudyInstanceUIDs=${studyInstanceUid}`}
                   >
-                    {/* TODO revisit the completely rounded style of buttons used for launching a mode from the worklist later */}
+                    {/* TODO revisit the completely rounded style of buttons used for launching a mode from the worklist later - for now use LegacyButton*/}
                     <Button
                       type={ButtonEnums.type.primary}
                       size={ButtonEnums.size.medium}
@@ -465,33 +466,28 @@ function WorkList({
 
   const hasStudies = numOfStudies > 0;
 
-  const AboutModal = customizationService.getCustomization(
-    'ohif.aboutModal'
-  ) as coreTypes.MenuComponentCustomization;
-  const UserPreferencesModal = customizationService.getCustomization(
-    'ohif.userPreferencesModal'
-  ) as coreTypes.MenuComponentCustomization;
+  const AboutModal = customizationService.getCustomization('ohif.aboutModal');
+  const UserPreferencesModal = customizationService.getCustomization('ohif.userPreferencesModal');
 
   const menuOptions = [
     {
-      title: AboutModal?.menuTitle ?? t('Header:About'),
+      title: t('Header:About'),
       icon: 'info',
       onClick: () =>
         show({
-          content: AboutModal,
-          title: AboutModal?.title ?? t('AboutModal:About OHIF Viewer'),
-          containerClassName: AboutModal?.containerClassName ?? 'max-w-md',
+          content: AboutModal as React.ComponentType,
+          title: t('AboutModal:About OHIF Viewer'),
+          containerClassName: 'max-w-md ',
         }),
     },
     {
-      title: UserPreferencesModal.menuTitle ?? t('Header:Preferences'),
+      title: t('Header:Preferences'),
       icon: 'settings',
       onClick: () =>
         show({
+          title: t('UserPreferencesModal:User preferences'),
           content: UserPreferencesModal as React.ComponentType,
-          title: UserPreferencesModal.title ?? t('UserPreferencesModal:User preferences'),
-          containerClassName:
-            UserPreferencesModal?.containerClassName ?? 'flex max-w-4xl p-6 flex-col',
+          containerClassName: 'flex  max-w-4xl flex-col',
         }),
     },
   ];
