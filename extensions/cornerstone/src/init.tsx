@@ -189,11 +189,13 @@ export default async function init({
   initCineService(servicesManager);
   initStudyPrefetcherService(servicesManager);
 
-  measurementService.subscribe(measurementService.EVENTS.JUMP_TO_MEASUREMENT, evt => {
-    const { measurement } = evt;
-    const { uid: annotationUID } = measurement;
-    commandsManager.runCommand('jumpToMeasurementViewport', { measurement, annotationUID, evt });
-  });
+  if (measurementService) {
+    measurementService.subscribe(measurementService.EVENTS.JUMP_TO_MEASUREMENT, evt => {
+      const { measurement } = evt;
+      const { uid: annotationUID } = measurement;
+      commandsManager.runCommand('jumpToMeasurementViewport', { measurement, annotationUID, evt });
+    });
+  }
 
 
   // When a custom image load is performed, update the relevant viewports

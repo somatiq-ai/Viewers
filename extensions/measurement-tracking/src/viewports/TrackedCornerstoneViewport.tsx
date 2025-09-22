@@ -114,6 +114,10 @@ function TrackedCornerstoneViewport(
    * the DOM and thus can react to the events fired.
    */
   useEffect(() => {
+    if (!measurementService || !viewportGridService) {
+      return;
+    }
+
     const added = measurementService.EVENTS.MEASUREMENT_ADDED;
     const addedRaw = measurementService.EVENTS.RAW_MEASUREMENT_ADDED;
     const subscriptions = [];

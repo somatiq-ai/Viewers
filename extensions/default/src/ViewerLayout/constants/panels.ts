@@ -35,4 +35,40 @@ const panelGroupDefinition = {
   },
 };
 
-export { panelGroupDefinition };
+const getPanelGroupDefinition = ({
+  leftPanelInitialExpandedWidth: customLeftWidth,
+  rightPanelInitialExpandedWidth: customRightWidth,
+  leftPanelMinimumExpandedWidth: customLeftMinWidth,
+  rightPanelMinimumExpandedWidth: customRightMinWidth,
+}) => {
+  const leftWidth = customLeftWidth || leftPanelInitialExpandedWidth;
+  const rightWidth = customRightWidth || rightPanelInitialExpandedWidth;
+  const leftMinWidth = customLeftMinWidth || leftPanelInitialExpandedWidth;
+  const rightMinWidth = customRightMinWidth || rightPanelInitialExpandedWidth;
+
+  return {
+    groupId: 'viewerLayoutResizablePanelGroup',
+    shared: {
+      expandedInsideBorderSize,
+      collapsedInsideBorderSize,
+      collapsedOutsideBorderSize,
+      collapsedWidth,
+    },
+    left: {
+      panelId: 'viewerLayoutResizableLeftPanel',
+      initialExpandedWidth: leftWidth,
+      minimumExpandedOffsetWidth: leftMinWidth + expandedInsideBorderSize,
+      initialExpandedOffsetWidth: leftWidth + expandedInsideBorderSize,
+      collapsedOffsetWidth: collapsedWidth + collapsedInsideBorderSize + collapsedOutsideBorderSize,
+    },
+    right: {
+      panelId: 'viewerLayoutResizableRightPanel',
+      initialExpandedWidth: rightWidth,
+      minimumExpandedOffsetWidth: rightMinWidth + expandedInsideBorderSize,
+      initialExpandedOffsetWidth: rightWidth + expandedInsideBorderSize,
+      collapsedOffsetWidth: collapsedWidth + collapsedInsideBorderSize + collapsedOutsideBorderSize,
+    },
+  };
+};
+
+export { panelGroupDefinition, getPanelGroupDefinition };

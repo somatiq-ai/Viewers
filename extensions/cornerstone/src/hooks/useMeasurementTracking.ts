@@ -73,7 +73,7 @@ export function useMeasurementTracking({ viewportId }: { viewportId: string }) {
   }, [isTracked, updateTrackedMeasurements]);
 
   useEffect(() => {
-    if (!trackedMeasurementsService) {
+    if (!trackedMeasurementsService || !measurementService) {
       return;
     }
 
@@ -102,19 +102,17 @@ export function useMeasurementTracking({ viewportId }: { viewportId: string }) {
     ];
 
     // Subscribe to measurement service events to update trackedMeasurementUIDs
-    if (measurementService) {
-      [
-        measurementService.EVENTS.MEASUREMENT_ADDED,
-        measurementService.EVENTS.RAW_MEASUREMENT_ADDED,
-        measurementService.EVENTS.MEASUREMENT_UPDATED,
-        measurementService.EVENTS.MEASUREMENT_REMOVED,
-        measurementService.EVENTS.MEASUREMENTS_CLEARED,
-      ].forEach(eventType => {
-        subscriptions.push(
-          measurementService.subscribe(eventType, () => updateTrackedMeasurements())
-        );
-      });
-    }
+    [
+      measurementService.EVENTS.MEASUREMENT_ADDED,
+      measurementService.EVENTS.RAW_MEASUREMENT_ADDED,
+      measurementService.EVENTS.MEASUREMENT_UPDATED,
+      measurementService.EVENTS.MEASUREMENT_REMOVED,
+      measurementService.EVENTS.MEASUREMENTS_CLEARED,
+    ].forEach(eventType => {
+      subscriptions.push(
+        measurementService.subscribe(eventType, () => updateTrackedMeasurements())
+      );
+    });
 
     return () => {
       subscriptions.forEach(sub => sub.unsubscribe());

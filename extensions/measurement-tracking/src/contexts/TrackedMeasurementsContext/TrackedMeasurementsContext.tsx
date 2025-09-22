@@ -40,16 +40,22 @@ function TrackedMeasurementsContextProvider(
   { servicesManager, commandsManager, extensionManager }: withAppTypes, // Bound by consumer
   { children } // Component props
 ) {
-  const [appConfig] = useAppConfig();
-
-  const [viewportGrid, viewportGridService] = useViewportGrid();
-  const { activeViewportId, viewports } = viewportGrid;
   const {
     measurementService,
     displaySetService,
     customizationService,
     trackedMeasurementsService,
   } = servicesManager.services as AppTypes.Services;
+
+  // Early return if required services are not available
+  if (!measurementService || !displaySetService || !customizationService || !trackedMeasurementsService) {
+    return <>{children}</>;
+  }
+
+  const [appConfig] = useAppConfig();
+
+  const [viewportGrid, viewportGridService] = useViewportGrid();
+  const { activeViewportId, viewports } = viewportGrid;
 
   const machineOptions = Object.assign({}, defaultOptions);
   machineOptions.actions = Object.assign({}, machineOptions.actions, {

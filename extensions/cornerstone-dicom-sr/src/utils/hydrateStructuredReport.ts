@@ -50,6 +50,11 @@ export default function hydrateStructuredReport(
   const dataSource = extensionManager.getActiveDataSource()[0];
   const { measurementService, displaySetService, customizationService } = servicesManager.services;
 
+  // Early return if required services are not available
+  if (!measurementService || !displaySetService || !customizationService) {
+    throw new Error('Required services not available for structured report hydration');
+  }
+
   const codingValues = customizationService.getCustomization('codingValues');
   const disableEditing = customizationService.getCustomization('panelMeasurement.disableEditing');
 

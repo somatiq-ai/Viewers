@@ -351,6 +351,12 @@ const connectMeasurementServiceToTools = ({
 }) => {
   const { measurementService, cornerstoneViewportService, viewportGridService } =
     servicesManager.services;
+
+  // Early return if required services are not available
+  if (!measurementService || !cornerstoneViewportService || !viewportGridService) {
+    return;
+  }
+
   const { MEASUREMENT_REMOVED, MEASUREMENTS_CLEARED, MEASUREMENT_UPDATED, RAW_MEASUREMENT_ADDED } =
     measurementService.EVENTS;
 

@@ -62,6 +62,10 @@ export function useMeasurements({ measurementFilter } = { measurementFilter: () 
   const [displayMeasurements, setDisplayMeasurements] = useState([]);
 
   useEffect(() => {
+    if (!measurementService || !displaySetService) {
+      return;
+    }
+
     const updateDisplayMeasurements = () => {
       const measurements = measurementService.getMeasurements(measurementFilter);
       const mappedMeasurements = measurements.map(m =>
