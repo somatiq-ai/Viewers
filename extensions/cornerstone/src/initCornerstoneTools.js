@@ -4,7 +4,7 @@ import {
   SegmentBidirectionalTool,
   StackScrollTool,
   VolumeRotateTool,
-  // ZoomTool,
+  ZoomTool,
   MIPJumpToClickTool,
   LengthTool,
   RectangleROITool,
@@ -31,6 +31,7 @@ import {
   TrackballRotateTool,
   AdvancedMagnifyTool,
   UltrasoundDirectionalTool,
+  UltrasoundPleuraBLineTool,
   PlanarFreehandROITool,
   PlanarFreehandContourSegmentationTool,
   SplineROITool,
@@ -39,15 +40,13 @@ import {
   WindowLevelRegionTool,
   SegmentSelectTool,
   RegionSegmentPlusTool,
+  SegmentLabelTool,
 } from '@cornerstonejs/tools';
 import { LabelmapSlicePropagationTool, MarkerLabelmapTool } from '@cornerstonejs/ai';
 import * as polySeg from '@cornerstonejs/polymorphic-segmentation';
 
 import CalibrationLineTool from './tools/CalibrationLineTool';
 import ImageOverlayViewerTool from './tools/ImageOverlayViewerTool';
-import ZoomToolTouch from './tools/ZoomToolTouch';
-import ZoomInvertedTool from './tools/ZoomInvertedTool';
-// import CrosshairsBoldTool from './tools/CrosshairsBoldTool';
 
 export default function initCornerstoneTools(configuration = {}) {
   CrosshairsTool.isAnnotation = false;
@@ -72,7 +71,7 @@ export default function initCornerstoneTools(configuration = {}) {
   addTool(WindowLevelTool);
   addTool(StackScrollTool);
   addTool(VolumeRotateTool);
-  addTool(ZoomToolTouch);
+  addTool(ZoomTool);
   addTool(ProbeTool);
   addTool(MIPJumpToClickTool);
   addTool(LengthTool);
@@ -98,6 +97,7 @@ export default function initCornerstoneTools(configuration = {}) {
   addTool(ImageOverlayViewerTool);
   addTool(AdvancedMagnifyTool);
   addTool(UltrasoundDirectionalTool);
+  addTool(UltrasoundPleuraBLineTool);
   addTool(PlanarFreehandROITool);
   addTool(SplineROITool);
   addTool(LivewireContourTool);
@@ -105,11 +105,10 @@ export default function initCornerstoneTools(configuration = {}) {
   addTool(WindowLevelRegionTool);
   addTool(PlanarFreehandContourSegmentationTool);
   addTool(SegmentSelectTool);
+  addTool(SegmentLabelTool);
   addTool(LabelmapSlicePropagationTool);
   addTool(MarkerLabelmapTool);
   addTool(RegionSegmentPlusTool);
-  // Optional: Register ZoomInverted as an alternative tool id
-  addTool(ZoomInvertedTool);
   // Modify annotation tools to use dashed lines on SR
   const annotationStyle = {
     textBoxFontSize: '15px',
@@ -130,8 +129,7 @@ const toolNames = {
   ArrowAnnotate: ArrowAnnotateTool.toolName,
   WindowLevel: WindowLevelTool.toolName,
   StackScroll: StackScrollTool.toolName,
-  Zoom: ZoomToolTouch.toolName,
-  ZoomInverted: ZoomInvertedTool.toolName,
+  Zoom: ZoomTool.toolName,
   VolumeRotate: VolumeRotateTool.toolName,
   MipJumpToClick: MIPJumpToClickTool.toolName,
   Length: LengthTool.toolName,
@@ -157,6 +155,7 @@ const toolNames = {
   ImageOverlayViewer: ImageOverlayViewerTool.toolName,
   AdvancedMagnify: AdvancedMagnifyTool.toolName,
   UltrasoundDirectional: UltrasoundDirectionalTool.toolName,
+  UltrasoundAnnotation: UltrasoundPleuraBLineTool.toolName,
   SplineROI: SplineROITool.toolName,
   LivewireContour: LivewireContourTool.toolName,
   PlanarFreehandROI: PlanarFreehandROITool.toolName,
@@ -165,6 +164,7 @@ const toolNames = {
   PlanarFreehandContourSegmentation: PlanarFreehandContourSegmentationTool.toolName,
   SegmentBidirectional: SegmentBidirectionalTool.toolName,
   SegmentSelect: SegmentSelectTool.toolName,
+  SegmentLabel: SegmentLabelTool.toolName,
   LabelmapSlicePropagation: LabelmapSlicePropagationTool.toolName,
   MarkerLabelmap: MarkerLabelmapTool.toolName,
   RegionSegmentPlus: RegionSegmentPlusTool.toolName,

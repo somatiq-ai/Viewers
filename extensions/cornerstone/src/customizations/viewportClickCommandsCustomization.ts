@@ -7,6 +7,7 @@ export default {
         commandName: 'toggleCrosshairsAndReferenceLines',
         commandOptions: {
           requireNearbyToolData: true,
+          menuId: 'measurementsContextMenu',
         },
       },
     ],

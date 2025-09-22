@@ -5,17 +5,7 @@ import PanelStudyBrowser from '@ohif/extension-default/src/Panels/StudyBrowser/P
 import { UntrackSeriesModal } from './untrackSeriesModal';
 import { useTrackedMeasurements } from '../../getContextModule';
 
-const thumbnailNoImageModalities = [
-  'SR',
-  'SEG',
-  'SM',
-  'RTSTRUCT',
-  'RTPLAN',
-  'RTDOSE',
-  'DOC',
-  'OT',
-  'PMAP',
-];
+const thumbnailNoImageModalities = ['SR', 'SEG', 'RTSTRUCT', 'RTPLAN', 'RTDOSE', 'PMAP'];
 
 /**
  * Panel component for the Study Browser with tracking capabilities
@@ -27,12 +17,10 @@ export default function PanelStudyBrowserTracking({
   dataSource,
 }) {
   const { servicesManager } = useSystem();
-  const { displaySetService, uiModalService, measurementService, viewportGridService, studyPrefetcherService } =
+  const { displaySetService, uiModalService, measurementService, viewportGridService } =
     servicesManager.services;
   const [trackedMeasurements, sendTrackedMeasurementsEvent] = useTrackedMeasurements();
   const { trackedSeries } = trackedMeasurements.context;
-
-  const _displaySetLoadingStates = studyPrefetcherService._displaySetLoadingStates;
 
   const checkDirtyMeasurements = displaySetInstanceUID => {
     const displaySet = displaySetService.getDisplaySetByUID(displaySetInstanceUID);
@@ -81,6 +69,7 @@ export default function PanelStudyBrowserTracking({
     });
   };
 
+  // Custom mapping function to add tracking data to display sets
   const mapDisplaySetsWithTracking = (
     displaySets,
     displaySetLoadingState,
@@ -127,7 +116,11 @@ export default function PanelStudyBrowserTracking({
 
   // Override component type to use tracking specific components
   const getComponentType = ds => {
-    if (thumbnailNoImageModalities.includes(ds.Modality) || ds?.unsupported) {
+    if (
+      thumbnailNoImageModalities.includes(ds.Modality) ||
+      ds.unsupported ||
+      ds.thumbnailSrc === null
+    ) {
       return 'thumbnailNoImage';
     }
     return 'thumbnailTracked';

@@ -13,23 +13,10 @@ function ViewerViewportGrid(props: withAppTypes) {
 
   const { layout, activeViewportId, viewports, isHangingProtocolLayout } = viewportGrid;
   const { numCols, numRows } = layout;
-  const { ref: resizeRef } = useResizeDetector({
-    refreshMode: 'debounce',
-    refreshRate: 7,
-    refreshOptions: { leading: true },
-    onResize: () => {
-      viewportGridService.setViewportGridSizeChanged();
-    },
-  });
   const layoutHash = useRef(null);
 
-  const {
-    displaySetService,
-    measurementService,
-    hangingProtocolService,
-    uiNotificationService,
-    customizationService,
-  } = servicesManager.services;
+  const { displaySetService, hangingProtocolService, uiNotificationService, customizationService } =
+    servicesManager.services;
 
   const generateLayoutHash = () => `${numCols}-${numRows}`;
 
@@ -41,9 +28,9 @@ function ViewerViewportGrid(props: withAppTypes) {
 
    */
   const updateDisplaySetsFromProtocol = (
-    protocol: Types.HangingProtocol.Protocol,
+    _protocol: Types.HangingProtocol.Protocol,
     stage,
-    activeStudyUID,
+    _activeStudyUID,
     viewportMatchDetails
   ) => {
     const availableDisplaySets = displaySetService.getActiveDisplaySets();
@@ -324,7 +311,7 @@ function ViewerViewportGrid(props: withAppTypes) {
           return !displaySet?.unsupported;
         });
 
-      const { component: ViewportComponent, isReferenceViewable } = _getViewportComponent(
+      const { component: ViewportComponent } = _getViewportComponent(
         displaySets,
         viewportComponents,
         uiNotificationService
@@ -424,7 +411,7 @@ function ViewerViewportGrid(props: withAppTypes) {
               displaySetOptions={displaySetOptions}
               needsRerendering={displaySetsNeedsRerendering}
               isHangingProtocolLayout={isHangingProtocolLayout}
-              onElementEnabled={() => {
+              onElementEnabled={evt => {
                 viewportGridService.setViewportIsReady(viewportId, true);
               }}
             />
@@ -444,10 +431,7 @@ function ViewerViewportGrid(props: withAppTypes) {
   }
 
   return (
-    <div
-      ref={resizeRef}
-      className="border-input h-[calc(100%-0.25rem)] w-full border"
-    >
+    <div className="border-input h-[calc(100%-0.25rem)] w-full border">
       <ViewportGrid
         numRows={numRows}
         numCols={numCols}
@@ -474,8 +458,8 @@ function _getViewportComponent(displaySets, viewportComponents, uiNotificationSe
       throw new Error('displaySetsToDisplay is null');
     }
     if (viewportComponents[i].displaySetsToDisplay.includes(SOPClassHandlerId)) {
-      const { component, isReferenceViewable } = viewportComponents[i];
-      return { component, isReferenceViewable };
+      const { component } = viewportComponents[i];
+      return { component };
     }
   }
 
@@ -486,7 +470,7 @@ function _getViewportComponent(displaySets, viewportComponents, uiNotificationSe
     type: 'error',
   });
 
-  return { component: EmptyViewport, isReferenceViewable: () => false };
+  return { component: EmptyViewport };
 }
 
 export default ViewerViewportGrid;

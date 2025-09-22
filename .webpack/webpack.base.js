@@ -51,7 +51,6 @@ const defineValues = {
   'process.env.LOCIZE_API_KEY': JSON.stringify(process.env.LOCIZE_API_KEY || ''),
   'process.env.REACT_APP_I18N_DEBUG': JSON.stringify(process.env.REACT_APP_I18N_DEBUG || ''),
   'process.env.TEST_ENV': JSON.stringify(process.env.TEST_ENV || ''),
-  'process.env.DISABLE_ERRORS': JSON.stringify(process.env.DISABLE_ERRORS || ''),
 };
 
 // Only redefine updated values.  This avoids warning messages in the logs
@@ -65,9 +64,6 @@ module.exports = (env, argv, { SRC_DIR, ENTRY }) => {
   const isQuickBuild = QUICK_BUILD === 'true';
 
   const config = {
-    devServer: {
-      allowedHosts: 'all',
-    },
     mode: isProdBuild ? 'production' : 'development',
     devtool: isProdBuild ? 'source-map' : 'cheap-module-source-map',
     entry: ENTRY,
@@ -194,8 +190,7 @@ module.exports = (env, argv, { SRC_DIR, ENTRY }) => {
           test: /\.(woff|woff2|eot|ttf|otf)$/i,
           type: 'asset/resource',
         },
-      ],
-
+      ], //.concat(vtkRules),
     },
     resolve: {
       mainFields: ['module', 'browser', 'main'],

@@ -35,4 +35,7 @@ dockerfile
 coverage/
 platform/docs/
 testdata/
+<<<<<<< HEAD
 .yarnrc
+=======
+>>>>>>> release/3.11

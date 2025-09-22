@@ -50,28 +50,34 @@ function ViewerHeader({
   const { t } = useTranslation();
   const { show } = useModal();
 
-  const AboutModal: any = customizationService.getCustomization('ohif.aboutModal') as any;
-  const UserPreferencesModal: any = customizationService.getCustomization('ohif.userPreferencesModal') as any;
+  const AboutModal = customizationService.getCustomization(
+    'ohif.aboutModal'
+  ) as Types.MenuComponentCustomization;
+
+  const UserPreferencesModal = customizationService.getCustomization(
+    'ohif.userPreferencesModal'
+  ) as Types.MenuComponentCustomization;
 
   const menuOptions = [
     {
-      title: t('Header:About'),
+      title: AboutModal?.menuTitle ?? t('Header:About'),
       icon: 'info',
       onClick: () =>
         show({
           content: AboutModal,
-          title: t('AboutModal:About OHIF Viewer'),
-          containerClassName: 'max-w-md',
+          title: AboutModal?.title ?? t('AboutModal:About OHIF Viewer'),
+          containerClassName: AboutModal?.containerClassName ?? 'max-w-md',
         }),
     },
     {
-      title: t('Header:Preferences'),
+      title: UserPreferencesModal.menuTitle ?? t('Header:Preferences'),
       icon: 'settings',
       onClick: () =>
         show({
           content: UserPreferencesModal,
-          title: t('UserPreferencesModal:User preferences'),
-          containerClassName: 'flex max-w-4xl p-6 flex-col',
+          title: UserPreferencesModal.title ?? t('UserPreferencesModal:User preferences'),
+          containerClassName:
+            UserPreferencesModal?.containerClassName ?? 'flex max-w-4xl p-6 flex-col',
         }),
     },
   ];
@@ -85,7 +91,6 @@ function ViewerHeader({
       },
     });
   }
-
 
   return (
     <Header

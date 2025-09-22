@@ -3,6 +3,12 @@ import { Types, DicomMetadataStore } from '@ohif/core';
 import { ContextMenuController } from './CustomizableContextMenu';
 import DicomTagBrowser from './DicomTagBrowser/DicomTagBrowser';
 import reuseCachedLayouts from './utils/reuseCachedLayouts';
+import {
+  configureViewportForLayerAddition,
+  configureViewportForLayerRemoval,
+  canAddDisplaySetToViewport,
+  DERIVED_OVERLAY_MODALITIES,
+} from './utils/layerConfigurationUtils';
 import findViewportsByPosition, {
   findOrCreateViewport as layoutFindOrCreate,
 } from './findViewportsByPosition';
@@ -51,6 +57,137 @@ const commandsModule = ({
   const contextMenuController = new ContextMenuController(servicesManager, commandsManager);
 
   const actions = {
+    /**
+     * Adds a display set as a layer to the specified viewport
+     *
+     * @param options.viewportId - The ID of the viewport to add the layer to
+     * @param options.displaySetInstanceUID - The UID of the display set to add as a layer
+     * @param options.removeFirst - Optional flag to remove the display set first if it's already added
+     */
+    addDisplaySetAsLayer: ({ viewportId, displaySetInstanceUID, removeFirst = false }) => {
+      if (!viewportId || !displaySetInstanceUID) {
+        console.warn('Missing required parameters for addDisplaySetAsLayer command');
+        return;
+      }
+
+      const { displaySetService, viewportGridService, hangingProtocolService } =
+        servicesManager.services;
+
+      // Get the display set
+      const displaySet = displaySetService.getDisplaySetByUID(displaySetInstanceUID);
+      if (!displaySet) {
+        return;
+      }
+
+      // Get current display sets for the viewport
+      const currentDisplaySetUIDs = viewportGridService.getDisplaySetsUIDsForViewport(viewportId);
+
+      // Check if we can add this display set to the viewport
+      const canAdd = canAddDisplaySetToViewport({
+        viewportId,
+        displaySetInstanceUID,
+        servicesManager,
+      });
+
+      if (!canAdd) {
+        return;
+      }
+
+      // Add the display set to the viewport
+      const updatedViewports = hangingProtocolService.getViewportsRequireUpdate(
+        viewportId,
+        displaySetInstanceUID
+      );
+
+      // Configure each viewport for layer addition
+      updatedViewports.forEach(viewport => {
+        configureViewportForLayerAddition({
+          viewport,
+          displaySetInstanceUID,
+          currentDisplaySetUIDs,
+          servicesManager,
+        });
+      });
+
+      // Update position presentation
+      commandsManager.runCommand('updateStoredPositionPresentation', {
+        viewportId,
+        displaySetInstanceUIDs: updatedViewports[0].displaySetInstanceUIDs,
+      });
+
+      // Run command to update viewports
+      commandsManager.run('setDisplaySetsForViewports', {
+        viewportsToUpdate: updatedViewports,
+      });
+    },
+
+    /**
+     * Removes a display set layer from the specified viewport
+     *
+     * @param options.viewportId - The ID of the viewport to remove the layer from
+     * @param options.displaySetInstanceUID - The UID of the display set to remove
+     */
+    removeDisplaySetLayer: ({ viewportId, displaySetInstanceUID }) => {
+      if (!viewportId || !displaySetInstanceUID) {
+        console.warn('Missing required parameters for removeDisplaySetLayer command');
+        return;
+      }
+
+      const {
+        displaySetService,
+        viewportGridService,
+        hangingProtocolService,
+        segmentationService,
+      } = servicesManager.services;
+
+      // Get the display set
+      const displaySet = displaySetService.getDisplaySetByUID(displaySetInstanceUID);
+      if (!displaySet) {
+        return;
+      }
+
+      // Get current display sets for the viewport
+      const currentDisplaySetUIDs = viewportGridService.getDisplaySetsUIDsForViewport(viewportId);
+
+      // If the display set is not in the viewport, no need to remove it
+      if (!currentDisplaySetUIDs.includes(displaySetInstanceUID)) {
+        return;
+      }
+
+      // Check if it's a segmentation and handle accordingly
+      const isSegmentation = DERIVED_OVERLAY_MODALITIES.includes(displaySet.Modality);
+      if (isSegmentation) {
+        segmentationService.removeSegmentationRepresentations(viewportId, {
+          segmentationId: displaySetInstanceUID,
+        });
+      }
+
+      const updatedViewports = hangingProtocolService.getViewportsRequireUpdate(
+        viewportId,
+        displaySetInstanceUID
+      );
+
+      // Configure each viewport for layer removal
+      updatedViewports.forEach(viewport => {
+        configureViewportForLayerRemoval({
+          viewport,
+          displaySetInstanceUID,
+          currentDisplaySetUIDs,
+          servicesManager,
+        });
+      });
+
+      // Update position presentation
+      commandsManager.runCommand('updateStoredPositionPresentation', {
+        viewportId,
+        displaySetInstanceUIDs: updatedViewports[0].displaySetInstanceUIDs,
+      });
+
+      // Update the viewports
+      commandsManager.run('setDisplaySetsForViewports', {
+        viewportsToUpdate: updatedViewports,
+      });
+    },
     /**
      * Runs a command in multi-monitor mode.  No-op if not multi-monitor.
      */
@@ -258,6 +395,7 @@ const commandsModule = ({
           hangingProtocolService.setProtocol(protocolId, {
             stageId,
             stageIndex: useStageIdx,
+            displaySetSelectorMap,
           });
         } else {
           hangingProtocolService.setProtocol(protocolId, {
@@ -302,23 +440,20 @@ const commandsModule = ({
         protocol.id === protocolId &&
         (stageIndex === undefined || stageIndex === desiredStageIndex)
       ) {
-        console.log('toggleHangingProtocol <<< >>', protocolId, stageIndex, true);
         // Toggling off - restore to previous state
         const previousState = toggleHangingProtocol[storedHanging] || {
           protocolId: 'default',
         };
         return actions.setHangingProtocol(previousState);
       } else {
-        console.log('toggleHangingProtocol <<< >>', protocolId, stageIndex, false);
         setToggleHangingProtocol(storedHanging, {
           protocolId: protocol.id,
           stageIndex: desiredStageIndex,
         });
-        console.log('toggleHangingProtocol <<< >>', protocolId, stageIndex, false);
         return actions.setHangingProtocol({
           protocolId,
           stageIndex,
-          reset: false,
+          reset: true,
         });
       }
     },
@@ -343,235 +478,6 @@ const commandsModule = ({
         message: 'The hanging protocol has no more applicable stages',
         type: 'info',
         duration: 3000,
-      });
-    },
-
-        /**
-     * Sets the orientation of the selected viewport without changing the layout
-     * @param orientation - The orientation to set ('axial', 'sagittal', 'coronal')
-     */
-    setSelectedViewportOrientation: ({ orientation }) => {
-      const { viewportGridService } = servicesManager.services;
-      const { activeViewportId, viewports } = viewportGridService.getState();
-
-      if (!activeViewportId) {
-        console.warn('No active viewport found');
-        return;
-      }
-
-      const activeViewport = viewports.get(activeViewportId);
-      if (!activeViewport) {
-        console.warn('Active viewport not found in viewports map');
-        return;
-      }
-
-      // Update the viewport with volume viewport type and MPR toolgroup to support orientation changes
-      const updatedViewportOptions = {
-        ...activeViewport.viewportOptions,
-        viewportType: 'volume', // Ensure it's a volume viewport for MPR support
-        toolGroupId: 'mpr', // Use MPR tool group for orientation support
-        orientation: orientation,
-        initialImageOptions: {
-          preset: 'middle', // Default to middle slice
-        },
-        syncGroups: [
-          {
-            type: 'voi',
-            id: 'default',
-            source: true,
-            target: true,
-            options: {
-              syncColormap: true,
-            },
-          },
-          {
-            type: 'hydrateseg',
-            id: 'sameFORId',
-            source: true,
-            target: true,
-            options: {
-              matchingRules: ['sameFOR'],
-            },
-          },
-        ]
-      };
-
-      // Update only the active viewport with the new orientation
-      viewportGridService.setDisplaySetsForViewport({
-        viewportId: activeViewportId,
-        displaySetInstanceUIDs: activeViewport.displaySetInstanceUIDs,
-        viewportOptions: updatedViewportOptions
-      });
-
-      // Ensure reference lines are configured for the new orientation
-      commandsManager.runCommand('setViewportForToolConfiguration', {
-        viewportId: activeViewportId,
-        toolName: 'ReferenceLines'
-      });
-
-      // Ensure sibling viewports showing the same series are in the same tool group ('mpr')
-      // and are volume viewports, so ReferenceLines can work across them.
-      try {
-        const { toolGroupService, cornerstoneViewportService } = servicesManager.services as any;
-
-        const activeDisplaySetUIDs = new Set(activeViewport.displaySetInstanceUIDs || []);
-
-        // Update other viewports that share the same display set(s)
-        for (const [vpId, vp] of viewports.entries()) {
-          if (vpId === activeViewportId) continue;
-
-          const vpDisplaySetUIDs = vp.displaySetInstanceUIDs || [];
-          const sharesSeries = vpDisplaySetUIDs.some(uid => activeDisplaySetUIDs.has(uid));
-          if (!sharesSeries) continue;
-
-          const vpOptions = (vp as any).viewportOptions || {};
-          const needsGroupOrTypeUpdate = vpOptions.toolGroupId !== 'mpr' || vpOptions.viewportType !== 'volume';
-          if (needsGroupOrTypeUpdate) {
-            viewportGridService.setDisplaySetsForViewport({
-              viewportId: vpId,
-              displaySetInstanceUIDs: vpDisplaySetUIDs,
-              viewportOptions: {
-                ...vpOptions,
-                viewportType: 'volume',
-                toolGroupId: 'mpr',
-              },
-            });
-          }
-        }
-
-        // Explicitly enable ReferenceLines in the tool group and set the source viewport
-        const toolGroup = toolGroupService.getToolGroupForViewport(activeViewportId);
-        if (toolGroup) {
-          if (toolGroup.hasTool('ReferenceLines')) {
-            toolGroup.setToolEnabled('ReferenceLines');
-            const prevConfig = toolGroup.getToolConfiguration('ReferenceLines') || {};
-            toolGroup.setToolConfiguration(
-              'ReferenceLines',
-              { ...prevConfig, sourceViewportId: activeViewportId },
-              true
-            );
-          }
-        }
-
-        // Render to reflect changes immediately
-        const renderingEngine = cornerstoneViewportService.getRenderingEngine();
-        renderingEngine?.render();
-
-        // Check if we have dual viewports and set reference lines only mode
-        const allViewports = viewportGridService.getViewports();
-        const activeViewports = Object.entries(allViewports).filter(([, viewport]) =>
-          viewport && viewport.displaySetInstanceUIDs?.length > 0
-        );
-
-        if (activeViewports.length === 2) {
-          // Delay to ensure viewports are fully set up
-          setTimeout(() => {
-            commandsManager.runCommand('setReferenceLinesOnlyMode');
-          }, 100);
-        }
-      } catch (err) {
-        console.warn('Failed to fully configure ReferenceLines after orientation change', err);
-      }
-    },
-
-    /**
-     * Closes a specific viewport by removing it from the viewport grid
-     * @param viewportId - The ID of the viewport to close
-     */
-    closeViewport: ({ viewportId }) => {
-      const { viewportGridService, hangingProtocolService } = servicesManager.services;
-      const { viewports, layout } = viewportGridService.getState();
-
-      if (!viewportId || !viewports.has(viewportId)) {
-        console.warn('Invalid viewport ID or viewport not found:', viewportId);
-        return;
-      }
-
-      // Check if we're currently in MPR mode
-      const activeProtocol = hangingProtocolService.getActiveProtocol();
-      if (activeProtocol?.protocol?.id === 'mpr' || activeProtocol?.protocol?.id === 'primaryAxiaMobile') {
-        // If MPR is enabled, toggle hanging protocol to exit MPR mode
-        console.log('MPR is active, toggling hanging protocol to exit MPR mode');
-        actions.toggleHangingProtocol({ protocolId: activeProtocol?.protocol?.id });
-        return;
-      }
-
-
-
-      // Don't allow closing if it's the last viewport, unless on mobile - then go to series page
-      if (viewports.size <= 1) {
-        // Check if we're on mobile
-        const isMobile = window.matchMedia('(max-width: 768px)').matches;
-        if (isMobile) {
-          // Navigate to series selection page on mobile
-          console.log('Closing last viewport on mobile - navigating to series page');
-          // Trigger the back to series functionality
-          window.dispatchEvent(new CustomEvent('ohif-mobile-back-to-series'));
-          return;
-        }
-        console.warn('Cannot close the last remaining viewport');
-        return;
-      }
-
-      // Create a new layout with one less viewport
-      const currentViewports = Array.from(viewports.values());
-      const remainingViewports = currentViewports.filter(vp => (vp as any).viewportOptions?.viewportId !== viewportId);
-
-            // Calculate new grid dimensions
-      const remainingCount = remainingViewports.length;
-      let newRows, newCols;
-
-
-      console.log('remainingCount <<< >>', remainingCount);
-
-      // Smart layout logic based on remaining viewport count
-      if (remainingCount <= 1) {
-        newRows = 1;
-        newCols = 1;
-      } else if (remainingCount === 2) {
-        // For 2 viewports, arrange side by side (1 row, 2 columns)
-        newRows = 1;
-        newCols = 2;
-      } else if (remainingCount === 3) {
-        // For 3 viewports, arrange in a line (1 row, 3 columns) or triangular (2x2 with one empty)
-        newRows = 1;
-        newCols = 3;
-      } else if (remainingCount === 4) {
-        newRows = 2;
-        newCols = 2;
-      } else if (remainingCount <= 6) {
-        newRows = 2;
-        newCols = 3;
-      } else if (remainingCount <= 9) {
-        newRows = 3;
-        newCols = 3;
-      } else {
-        // For more than 9 viewports, maintain current layout
-        newRows = layout.numRows;
-        newCols = layout.numCols;
-      }
-
-      // Set new layout with reduced size
-      viewportGridService.setLayout({
-        numRows: newRows,
-        numCols: newCols,
-        layoutOptions: [],
-        findOrCreateViewport: (position, positionId) => {
-          // Return existing viewport at this position if available
-          if (position < remainingViewports.length) {
-            const viewport = remainingViewports[position] as any;
-            // Ensure the viewport has the correct position information
-            return {
-              ...viewport,
-              positionId,
-              viewportOptions: {
-                ...viewport.viewportOptions,
-                viewportId: viewport.viewportOptions?.viewportId,
-              }
-            };
-          }
-          return null;
-        },
       });
     },
 
@@ -768,7 +674,11 @@ const commandsModule = ({
       const { activeViewportId, viewports } = viewportGridService.getState();
 
       const activeViewport = viewports.get(activeViewportId);
-      const activeDisplaySetInstanceUID = activeViewport.displaySetInstanceUIDs[0];
+      const activeDisplaySetInstanceUID = activeViewport?.displaySetInstanceUIDs?.[0];
+
+      if (!activeDisplaySetInstanceUID) {
+        return;
+      }
 
       const thumbnailList = document.querySelector('#ohif-thumbnail-list');
 
@@ -776,21 +686,9 @@ const commandsModule = ({
         return;
       }
 
-      const thumbnailListBounds = thumbnailList.getBoundingClientRect();
-
       const thumbnail = document.querySelector(`#thumbnail-${activeDisplaySetInstanceUID}`);
 
       if (!thumbnail) {
-        return;
-      }
-
-      const thumbnailBounds = thumbnail.getBoundingClientRect();
-
-      // This only handles a vertical thumbnail list.
-      if (
-        thumbnailBounds.top >= thumbnailListBounds.top &&
-        thumbnailBounds.top <= thumbnailListBounds.bottom
-      ) {
         return;
       }
 
@@ -880,11 +778,12 @@ const commandsModule = ({
       options: { direction: -1 },
     },
     setViewportGridLayout: actions.setViewportGridLayout,
-    setSelectedViewportOrientation: actions.setSelectedViewportOrientation,
-    closeViewport: actions.closeViewport,
     toggleOneUp: actions.toggleOneUp,
     openDICOMTagViewer: actions.openDICOMTagViewer,
     updateViewportDisplaySet: actions.updateViewportDisplaySet,
+    scrollActiveThumbnailIntoView: actions.scrollActiveThumbnailIntoView,
+    addDisplaySetAsLayer: actions.addDisplaySetAsLayer,
+    removeDisplaySetLayer: actions.removeDisplaySetLayer,
   };
 
   return {

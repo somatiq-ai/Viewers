@@ -26,7 +26,12 @@ function promptBeginTracking({ servicesManager, extensionManager }, ctx, evt) {
     const noTrackingMode = appConfig?.measurementTrackingMode === measurementTrackingMode.NONE;
     let promptResult;
 
-    promptResult = RESPONSE.NO_NEVER;
+    promptResult = noTrackingMode
+      ? RESPONSE.NO_NEVER
+      : standardMode
+        ? await _askTrackMeasurements(uiViewportDialogService, customizationService, viewportId)
+        : RESPONSE.SET_STUDY_AND_SERIES;
+
     resolve({
       userResponse: promptResult,
       StudyInstanceUID,

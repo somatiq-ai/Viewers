@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useEffect, useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 
@@ -27,6 +26,10 @@ function ViewerLayout({
   rightPanelClosed = false,
   leftPanelResizable = false,
   rightPanelResizable = false,
+  leftPanelInitialExpandedWidth,
+  rightPanelInitialExpandedWidth,
+  leftPanelMinimumExpandedWidth,
+  rightPanelMinimumExpandedWidth,
 }: withAppTypes): React.FunctionComponent {
   const [appConfig] = useAppConfig();
 
@@ -57,16 +60,20 @@ function ViewerLayout({
     rightPanelClosed,
     setRightPanelClosed,
     hasLeftPanels,
-    hasRightPanels
+    hasRightPanels,
+    leftPanelInitialExpandedWidth,
+    rightPanelInitialExpandedWidth,
+    leftPanelMinimumExpandedWidth,
+    rightPanelMinimumExpandedWidth
   );
 
   const handleMouseEnter = () => {
     (document.activeElement as HTMLElement)?.blur();
   };
 
-  const LoadingIndicatorProgress: any = customizationService.getCustomization(
+  const LoadingIndicatorProgress = customizationService.getCustomization(
     'ui.loadingIndicatorProgress'
-  ) as any;
+  );
 
   /**
    * Set body classes (tailwindcss) that don't allow vertical
@@ -83,7 +90,7 @@ function ViewerLayout({
     };
   }, []);
 
-  const getComponent = (id: string) => {
+  const getComponent = id => {
     const entry = extensionManager.getModuleEntry(id);
 
     if (!entry || !entry.component) {
@@ -112,7 +119,7 @@ function ViewerLayout({
     };
   }, [hangingProtocolService]);
 
-  const getViewportComponentData = (viewportComponent: any) => {
+  const getViewportComponentData = viewportComponent => {
     const { entry } = getComponent(viewportComponent.namespace);
 
     return {

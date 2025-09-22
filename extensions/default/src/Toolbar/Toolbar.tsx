@@ -1,15 +1,22 @@
 import React from 'react';
 import { useToolbar } from '@ohif/core';
 
-type ToolbarProps = {
-  servicesManager: AppTypes.ServicesManager;
+interface ToolbarProps {
   buttonSection?: string;
-  allowedIds?: string[];
-};
+  viewportId?: string;
+  location?: number;
+}
 
-export function Toolbar({ servicesManager, buttonSection = 'primary', allowedIds }: ToolbarProps) {
-  const { toolbarButtons, onInteraction } = useToolbar({
-    servicesManager,
+export function Toolbar({ buttonSection = 'primary', viewportId, location }: ToolbarProps) {
+  const {
+    toolbarButtons,
+    onInteraction,
+    isItemOpen,
+    isItemLocked,
+    openItem,
+    closeItem,
+    toggleLock,
+  } = useToolbar({
     buttonSection,
   });
 
@@ -19,21 +26,37 @@ export function Toolbar({ servicesManager, buttonSection = 'primary', allowedIds
 
   return (
     <>
-      {toolbarButtons
-        ?.filter(toolDef => (allowedIds ? allowedIds.includes(toolDef?.id) : true))
-        .map(toolDef => {
+      {toolbarButtons?.map(toolDef => {
         if (!toolDef) {
           return null;
         }
 
         const { id, Component, componentProps } = toolDef;
+
+        // Enhanced props with state and actions - respecting viewport specificity
+        const enhancedProps = {
+          ...componentProps,
+          isOpen: isItemOpen(id, viewportId),
+          isLocked: isItemLocked(id, viewportId),
+          onOpen: () => openItem(id, viewportId),
+          onClose: () => closeItem(id, viewportId),
+          onToggleLock: () => toggleLock(id, viewportId),
+          viewportId,
+        };
+
         const tool = (
           <Component
             key={id}
             id={id}
-            onInteraction={onInteraction}
-            servicesManager={servicesManager}
-            {...componentProps}
+            location={location}
+            onInteraction={args => {
+              onInteraction({
+                ...args,
+                itemId: id,
+                viewportId,
+              });
+            }}
+            {...enhancedProps}
           />
         );
 

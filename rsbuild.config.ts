@@ -12,7 +12,6 @@ const PUBLIC_DIR = path.resolve(__dirname, './platform/app/public');
 // Environment variables (similar to webpack.pwa.js)
 const APP_CONFIG = process.env.APP_CONFIG || 'config/default.js';
 const PUBLIC_URL = process.env.PUBLIC_URL || '/';
-const DISABLE_ERRORS = process.env.DISABLE_ERRORS || '';
 
 // Add these constants
 const NODE_ENV = process.env.NODE_ENV;
@@ -26,6 +25,7 @@ const PROXY_PATH_REWRITE_TO = process.env.PROXY_PATH_REWRITE_TO;
 
 // Add port constant
 const OHIF_PORT = Number(process.env.OHIF_PORT || 3000);
+const OHIF_OPEN = process.env.OHIF_OPEN !== 'false';
 
 export default defineConfig({
   source: {
@@ -44,7 +44,6 @@ export default defineConfig({
       'process.env.LOCIZE_PROJECTID': JSON.stringify(process.env.LOCIZE_PROJECTID || ''),
       'process.env.LOCIZE_API_KEY': JSON.stringify(process.env.LOCIZE_API_KEY || ''),
       'process.env.REACT_APP_I18N_DEBUG': JSON.stringify(process.env.REACT_APP_I18N_DEBUG || ''),
-      'process.env.DISABLE_ERRORS': JSON.stringify(DISABLE_ERRORS),
     },
   },
   plugins: [pluginReact(), pluginNodePolyfill()],
@@ -144,7 +143,7 @@ export default defineConfig({
   },
   server: {
     port: OHIF_PORT,
-    open: true,
+    open: OHIF_OPEN,
     // Configure proxy
     proxy: {
       '/dicomweb': {

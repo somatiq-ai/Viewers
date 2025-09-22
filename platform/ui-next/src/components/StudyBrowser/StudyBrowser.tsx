@@ -42,11 +42,8 @@ const StudyBrowser = ({
               displaySets={displaySets}
               modalities={modalities}
               isActive={isExpanded}
-              onClick={() => {
-                console.log('onClick' + studyInstanceUid);
-                onClickStudy(studyInstanceUid);
-              }}
-              onClickThumbnail={onDoubleClickThumbnail}
+              onClick={() => onClickStudy(studyInstanceUid)}
+              onClickThumbnail={onClickThumbnail}
               onDoubleClickThumbnail={onDoubleClickThumbnail}
               onClickUntrack={onClickUntrack}
               activeDisplaySetInstanceUIDs={activeDisplaySetInstanceUIDs}

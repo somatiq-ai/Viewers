@@ -3,9 +3,10 @@ import {
   StackViewport,
   VolumeViewport,
   utilities as csUtils,
+  Enums as CoreEnums,
   Types as CoreTypes,
   BaseVolumeViewport,
-  CONSTANTS,
+  getRenderingEngines,
 } from '@cornerstonejs/core';
 import {
   ToolGroupManager,
@@ -19,7 +20,6 @@ import * as labelmapInterpolation from '@cornerstonejs/labelmap-interpolation';
 import { ONNXSegmentationController } from '@cornerstonejs/ai';
 
 import { Types as OhifTypes, utils } from '@ohif/core';
-import { findNearbyToolData } from './utils/findNearbyToolData';
 import i18n from '@ohif/i18n';
 import {
   callInputDialogAutoComplete,
@@ -30,15 +30,16 @@ import {
 import { vec3, mat4 } from 'gl-matrix';
 import toggleImageSliceSync from './utils/imageSliceSync/toggleImageSliceSync';
 import { getFirstAnnotationSelected } from './utils/measurementServiceMappings/utils/selection';
+import { getViewportEnabledElement } from './utils/getViewportEnabledElement';
 import getActiveViewportEnabledElement from './utils/getActiveViewportEnabledElement';
 import toggleVOISliceSync from './utils/toggleVOISliceSync';
 import { usePositionPresentationStore, useSegmentationPresentationStore } from './stores';
 import { toolNames } from './initCornerstoneTools';
 import CornerstoneViewportDownloadForm from './utils/CornerstoneViewportDownloadForm';
-import USCaptureModal from './utils/USCaptureModal';
 import { updateSegmentBidirectionalStats } from './utils/updateSegmentationStats';
 import { generateSegmentationCSVReport } from './utils/generateSegmentationCSVReport';
 import { getUpdatedViewportsForSegmentation } from './utils/hydrationUtils';
+import { SegmentationRepresentations } from '@cornerstonejs/tools/enums';
 
 const { DefaultHistoryMemo } = csUtils.HistoryMemo;
 const toggleSyncFunctions = {
@@ -57,12 +58,23 @@ const getLabelmapTools = ({ toolGroupService }) => {
     // tools is an object with toolName as the key and tool as the value
     Object.keys(tools).forEach(toolName => {
       const tool = tools[toolName];
-      if (tool instanceof cornerstoneTools.LabelmapBaseTool) {
+      if (
+        tool instanceof cornerstoneTools.LabelmapBaseTool &&
+        tool.shouldResolvePreviewRequests()
+      ) {
         labelmapTools.push(tool);
       }
     });
   });
   return labelmapTools;
+};
+
+const getPreviewTools = ({ toolGroupService }) => {
+  const labelmapTools = getLabelmapTools({ toolGroupService });
+
+  const previewTools = labelmapTools.filter(tool => tool.acceptPreview || tool.rejectPreview);
+
+  return previewTools;
 };
 
 const segmentAI = new ONNXSegmentationController({
@@ -90,6 +102,7 @@ let segmentAIEnabled = false;
 function commandsModule({
   servicesManager,
   commandsManager,
+  extensionManager,
 }: OhifTypes.Extensions.ExtensionParams): OhifTypes.Extensions.CommandsModule {
   const {
     viewportGridService,
@@ -111,6 +124,10 @@ function commandsModule({
     return getActiveViewportEnabledElement(viewportGridService);
   }
 
+  function _getViewportEnabledElement(viewportId: string) {
+    return getViewportEnabledElement(viewportId);
+  }
+
   function _getActiveViewportToolGroupId() {
     const viewport = _getActiveViewportEnabledElement();
     return toolGroupService.getToolGroupForViewport(viewport.id);
@@ -129,6 +146,132 @@ function commandsModule({
   }
 
   const actions = {
+    jumpToMeasurementViewport: ({ annotationUID, measurement }) => {
+      cornerstoneTools.annotation.selection.setAnnotationSelected(annotationUID, true);
+      const { metadata } = measurement;
+
+      const activeViewportId = viewportGridService.getActiveViewportId();
+      // Finds the best viewport to jump to for showing the annotation view reference
+      // This may be different from active if there is a viewport already showing the display set.
+      const viewportId = cornerstoneViewportService.findNavigationCompatibleViewportId(
+        activeViewportId,
+        metadata
+      );
+      if (viewportId) {
+        const viewport = cornerstoneViewportService.getCornerstoneViewport(viewportId);
+        viewport.setViewReference(metadata);
+        viewport.render();
+        return;
+      }
+
+      const { displaySetInstanceUID: referencedDisplaySetInstanceUID } = measurement;
+      if (!referencedDisplaySetInstanceUID) {
+        console.warn('ViewportGrid::No display set found in', measurement);
+        return;
+      }
+
+      // Finds the viewport to update to show the given displayset/orientation.
+      // This will choose a view already containing the measurement display set
+      // if possible, otherwise will fallback to the active.
+      const viewportToUpdate = cornerstoneViewportService.findUpdateableViewportConfiguration(
+        activeViewportId,
+        measurement
+      );
+
+      if (!viewportToUpdate) {
+        console.warn('Unable to find a viewport to show this in');
+        return;
+      }
+      const updatedViewports = hangingProtocolService.getViewportsRequireUpdate(
+        viewportToUpdate.viewportId,
+        referencedDisplaySetInstanceUID
+      );
+
+      if (!updatedViewports?.[0]) {
+        console.warn(
+          'ViewportGrid::Unable to navigate to viewport containing',
+          referencedDisplaySetInstanceUID
+        );
+        return;
+      }
+
+      updatedViewports[0].viewportOptions = viewportToUpdate.viewportOptions;
+
+      // Update stored position presentation
+      commandsManager.run('updateStoredPositionPresentation', {
+        viewportId: viewportToUpdate.viewportId,
+        displaySetInstanceUIDs: [referencedDisplaySetInstanceUID],
+        referencedImageId: measurement.referencedImageId,
+        options: {
+          ...measurement.metadata,
+        },
+      });
+
+      commandsManager.run('setDisplaySetsForViewports', { viewportsToUpdate: updatedViewports });
+    },
+
+    hydrateSecondaryDisplaySet: async ({ displaySet, viewportId }) => {
+      if (!displaySet) {
+        return;
+      }
+
+      if (displaySet.isOverlayDisplaySet) {
+        // update the previously stored segmentationPresentation with the new viewportId
+        // presentation so that when we put the referencedDisplaySet back in the viewport
+        // it will have the correct segmentation representation hydrated
+        commandsManager.runCommand('updateStoredSegmentationPresentation', {
+          displaySet,
+          type:
+            displaySet.Modality === 'SEG'
+              ? SegmentationRepresentations.Labelmap
+              : SegmentationRepresentations.Contour,
+        });
+      }
+
+      const referencedDisplaySetInstanceUID = displaySet.referencedDisplaySetInstanceUID;
+
+      const storePositionPresentation = refDisplaySet => {
+        // update the previously stored positionPresentation with the new viewportId
+        // presentation so that when we put the referencedDisplaySet back in the viewport
+        // it will be in the correct position zoom and pan
+        commandsManager.runCommand('updateStoredPositionPresentation', {
+          viewportId,
+          displaySetInstanceUIDs: [refDisplaySet.displaySetInstanceUID],
+        });
+      };
+
+      if (displaySet.Modality === 'SEG' || displaySet.Modality === 'RTSTRUCT') {
+        const referencedDisplaySet = displaySetService.getDisplaySetByUID(
+          referencedDisplaySetInstanceUID
+        );
+        storePositionPresentation(referencedDisplaySet);
+        return commandsManager.runCommand('loadSegmentationDisplaySetsForViewport', {
+          viewportId,
+          displaySetInstanceUIDs: [referencedDisplaySet.displaySetInstanceUID],
+        });
+      } else if (displaySet.Modality === 'SR') {
+        const results = commandsManager.runCommand('hydrateStructuredReport', {
+          displaySetInstanceUID: displaySet.displaySetInstanceUID,
+        });
+        const { SeriesInstanceUIDs } = results;
+        const referencedDisplaySets = displaySetService.getDisplaySetsForSeries(
+          SeriesInstanceUIDs[0]
+        );
+        referencedDisplaySets.forEach(storePositionPresentation);
+
+        if (referencedDisplaySets.length) {
+          actions.setDisplaySetsForViewports({
+            viewportsToUpdate: [
+              {
+                viewportId: viewportGridService.getActiveViewportId(),
+                displaySetInstanceUIDs: [referencedDisplaySets[0].displaySetInstanceUID],
+              },
+            ],
+          });
+        }
+        return results;
+      }
+    },
     runSegmentBidirectional: async ({ segmentationId, segmentIndex } = {}) => {
       // Get active segmentation if not specified
       const targetSegmentation =
@@ -239,220 +382,6 @@ function commandsModule({
 
       commandsManager.run(options, optionsToUse);
     },
-
-    /**
-     * Shows the circular spinner context menu with length, contrast, and pan options
-     */
-    showSpinnerContextMenu: async options => {
-      console.log('Spinner context menu triggered', options);
-      const { event, nearbyToolData } = options || {};
-      const { uiDialogService } = servicesManager.services;
-
-      let position;
-
-      // Try to get position from various event sources
-      if (event) {
-        console.log('Event object:', event);
-        console.log('Event detail:', event.detail);
-
-        // For Cornerstone events, coordinates are in the detail.currentPoints.page
-        if (event.detail?.currentPoints?.page) {
-          const pageCoords = event.detail.currentPoints.page;
-          position = { x: pageCoords[0], y: pageCoords[1] };
-          console.log('Using page coordinates:', position);
-        }
-        // Try client coordinates from the original event
-        else if (event.detail?.event) {
-          const originalEvent = event.detail.event;
-          position = { x: originalEvent.clientX, y: originalEvent.clientY };
-          console.log('Using original event clientX/Y:', position);
-        }
-        // Direct clientX/Y coordinates
-        else if (event.clientX && event.clientY) {
-          position = { x: event.clientX, y: event.clientY };
-          console.log('Using direct clientX/Y:', position);
-        }
-        // Fallback to center
-        else {
-          position = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
-          console.log('Using center fallback:', position);
-        }
-      } else {
-        // Fallback to center for keyboard shortcuts
-        position = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
-        console.log('Using center for keyboard shortcut:', position);
-      }
-
-      console.log('Final spinner menu position:', position);
-
-      // Check if MPR is available for current display set
-      const { viewportGridService, cornerstoneViewportService, displaySetService } = servicesManager.services;
-      const activeViewportId = viewportGridService.getActiveViewportId();
-
-      let isMPRAvailable = false;
-      try {
-        const viewport = cornerstoneViewportService.getCornerstoneViewport(activeViewportId);
-        if (viewport) {
-          const displaySetUIDs = viewportGridService.getDisplaySetsUIDsForViewport(activeViewportId);
-          const displaySets = displaySetUIDs.map(displaySetService.getDisplaySetByUID);
-          isMPRAvailable = displaySets.every(displaySet => displaySet?.isReconstructable);
-        }
-      } catch (error) {
-        console.warn('Error evaluating MPR availability:', error);
-        isMPRAvailable = false;
-      }
-
-      // Define spinner menu items with their positions around the circle
-      const spinnerItems = [
-                // Basic Tools (Top Arc)
-        {
-          id: 'Length',
-          label: 'Length',
-          icon: 'tool-length',
-          angle: -90, // top
-          onClick: () => {
-            commandsManager.runCommand('setToolActive', { toolName: 'Length' });
-          },
-        },
-        {
-          id: 'WindowLevel',
-          label: 'Window/Level',
-          icon: 'tool-window-level',
-          angle: -45, // top-right
-          onClick: () => {
-            commandsManager.runCommand('setToolActive', { toolName: 'WindowLevel' });
-          },
-        },
-        {
-          id: 'Zoom',
-          label: 'Zoom',
-          icon: 'tool-zoom',
-          angle: 0, // right
-          onClick: () => {
-            commandsManager.runCommand('setToolActive', { toolName: 'Zoom' });
-          },
-        },
-
-        // MPR Group (Right Arc - 45° apart for even spacing)
-        {
-          id: 'MPR',
-          label: 'MPR',
-          icon: 'icon-mpr',
-          angle: 45, // bottom-right
-          disabled: !isMPRAvailable,
-          onClick: () => {
-            if (isMPRAvailable) {
-              commandsManager.runCommand('cycleMPROnMobile');
-            }
-          },
-        },
-        {
-          id: 'Axial',
-          label: 'Axial',
-          icon: 'icon-axial',
-          angle: 90, // bottom
-          disabled: !isMPRAvailable,
-          onClick: () => {
-            if (isMPRAvailable) {
-              commandsManager.runCommand('setSelectedViewportOrientation', {
-                orientation: 'axial',
-              });
-            }
-          },
-        },
-        {
-          id: 'Coronal',
-          label: 'Coronal',
-          icon: 'icon-coronal',
-          angle: 135, // bottom-left
-          disabled: !isMPRAvailable,
-          onClick: () => {
-            if (isMPRAvailable) {
-              commandsManager.runCommand('setSelectedViewportOrientation', {
-                orientation: 'coronal',
-              });
-            }
-          },
-        },
-        {
-          id: 'Sagittal',
-          label: 'Sagittal',
-          icon: 'icon-sagittal',
-          angle: 180, // left
-          disabled: !isMPRAvailable,
-          onClick: () => {
-            if (isMPRAvailable) {
-              commandsManager.runCommand('setSelectedViewportOrientation', {
-                orientation: 'sagittal',
-              });
-            }
-          },
-        },
-
-        // Other Tools (Left Arc)
-        {
-          id: 'invert',
-          label: 'Invert',
-          icon: 'tool-invert',
-          angle: 225, // top-left
-          onClick: () => {
-            commandsManager.runCommand('invertViewport');
-          },
-        },
-        {
-          id: 'Pan',
-          label: 'Pan',
-          icon: 'tool-move',
-          angle: 270, // top
-          onClick: () => {
-            commandsManager.runCommand('setToolActive', { toolName: 'Pan' });
-          },
-        },
-         {
-           id: 'TwoPanel',
-           label: 'TwoPanel',
-           icon: 'layout-common-1x2',
-           angle: 315, // top-right
-           onClick: () => {
-             commandsManager.runCommand('setViewportGridLayout', {
-               numRows: window.innerWidth < 768 ? 2 : 1,
-               numCols: window.innerWidth < 768 ? 1 : 2,
-             });
-           },
-         },
-      ];
-
-      // Import SpinnerContextMenu component dynamically
-      try {
-        const { SpinnerContextMenu } = await import('@ohif/ui-next');
-        console.log('SpinnerContextMenu imported:', SpinnerContextMenu);
-
-        if (!SpinnerContextMenu) {
-          console.error('SpinnerContextMenu is undefined');
-          return;
-        }
-
-        uiDialogService.hide('spinner-context-menu');
-        console.log('Showing spinner context menu dialog...');
-        uiDialogService.show({
-          id: 'spinner-context-menu',
-          showOverlay: false,
-          content: SpinnerContextMenu,
-          shouldCloseOnEsc: true,
-          shouldCloseOnOverlayClick: true,
-          unstyled: true,
-          contentProps: {
-            items: spinnerItems,
-            position,
-            onClose: () => {
-              uiDialogService.hide('spinner-context-menu');
-            },
-          },
-        });
-      } catch (error) {
-        console.error('Error loading SpinnerContextMenu:', error);
-      }
-    },
     updateStoredSegmentationPresentation: ({ displaySet, type }) => {
       const { addSegmentationPresentationItem } = useSegmentationPresentationStore.getState();
 
@@ -463,9 +392,11 @@ function commandsModule({
         type,
       });
     },
+
+    /** Stores the changed position presentation */
     updateStoredPositionPresentation: ({
       viewportId,
-      displaySetInstanceUID,
+      displaySetInstanceUIDs,
       referencedImageId,
       options,
     }) => {
@@ -473,22 +404,36 @@ function commandsModule({
       const { positionPresentationStore, setPositionPresentation, getPositionPresentationId } =
         usePositionPresentationStore.getState();
 
-      // Look inside positionPresentationStore and find the key that includes the displaySetInstanceUID
+      // Look inside positionPresentationStore and find the key that includes ALL the displaySetInstanceUIDs
       // and the value has viewportId as activeViewportId.
-      const previousReferencedDisplaySetStoreKey = Object.entries(positionPresentationStore).find(
-        ([key, value]) => key.includes(displaySetInstanceUID) && value.viewportId === viewportId
-      )?.[0];
+      let previousReferencedDisplaySetStoreKey;
+
+      if (
+        displaySetInstanceUIDs &&
+        Array.isArray(displaySetInstanceUIDs) &&
+        displaySetInstanceUIDs.length > 0
+      ) {
+        previousReferencedDisplaySetStoreKey = Object.entries(positionPresentationStore).find(
+          ([key, value]) => {
+            return (
+              displaySetInstanceUIDs.every(uid => key.includes(uid)) &&
+              value?.viewportId === viewportId
+            );
+          }
+        )?.[0];
+      }
 
       // Create presentation data with referencedImageId and options if provided
-      const presentationData = referencedImageId
-        ? {
-            ...presentations.positionPresentation,
-            viewReference: {
-              referencedImageId,
-              ...options,
-            },
-          }
-        : presentations.positionPresentation;
+      const presentationData =
+        referencedImageId || options?.FrameOfReferenceUID
+          ? {
+              ...presentations.positionPresentation,
+              viewReference: {
+                referencedImageId,
+                ...options,
+              },
+            }
+          : presentations.positionPresentation;
 
       if (previousReferencedDisplaySetStoreKey) {
         setPositionPresentation(previousReferencedDisplaySetStoreKey, presentationData);
@@ -499,7 +444,7 @@ function commandsModule({
       // so we need to grab the positionPresentationId directly from the store,
       // Todo: this is really hacky, we should have a better way for this
       const positionPresentationId = getPositionPresentationId({
-        displaySetInstanceUIDs: [displaySetInstanceUID],
+        displaySetInstanceUIDs,
         viewportId,
       });
 
@@ -571,7 +516,7 @@ function commandsModule({
       });
 
       if (val !== undefined && val !== null) {
-        measurementService.update(uid, { ...val }, true);
+        measurementService.update(uid, { ...measurement, label: val }, true);
       }
     },
     /**
@@ -760,9 +705,21 @@ function commandsModule({
 
       viewportGridService.setActiveViewportId(viewportId);
     },
-    arrowTextCallback: async ({ callback }) => {
+    arrowTextCallback: async ({ callback, data }) => {
       const labelConfig = customizationService.getCustomization('measurementLabels');
       const renderContent = customizationService.getCustomization('ui.labellingComponent');
+
+      if (!labelConfig) {
+        const label = await callInputDialog({
+          uiDialogService,
+          title: 'Edit Arrow Text',
+          placeholder: data?.data?.label || 'Enter new text',
+          defaultValue: data?.data?.label || '',
+        });
+
+        callback?.(label);
+        return;
+      }
 
       const value = await callInputDialogAutoComplete({
         uiDialogService,
@@ -779,10 +736,20 @@ function commandsModule({
       viewports.forEach((_, index) => cineService.setCine({ id: index, isPlaying: false }));
     },
 
-    setViewportWindowLevel({ viewportId, window, level }) {
+    setViewportWindowLevel({
+      viewportId,
+      windowWidth,
+      windowCenter,
+      displaySetInstanceUID,
+    }: {
+      viewportId: string;
+      windowWidth: number;
+      windowCenter: number;
+      displaySetInstanceUID?: string;
+    }) {
       // convert to numbers
-      const windowWidthNum = Number(window);
-      const windowCenterNum = Number(level);
+      const windowWidthNum = Number(windowWidth);
+      const windowCenterNum = Number(windowCenter);
 
       // get actor from the viewport
       const renderingEngine = cornerstoneViewportService.getRenderingEngine();
@@ -790,12 +757,28 @@ function commandsModule({
 
       const { lower, upper } = csUtils.windowLevel.toLowHighRange(windowWidthNum, windowCenterNum);
 
-      viewport.setProperties({
-        voiRange: {
-          upper,
-          lower,
-        },
-      });
+      if (viewport instanceof BaseVolumeViewport) {
+        const volumeId = actions.getVolumeIdForDisplaySet({
+          viewportId,
+          displaySetInstanceUID,
+        });
+        viewport.setProperties(
+          {
+            voiRange: {
+              upper,
+              lower,
+            },
+          },
+          volumeId
+        );
+      } else {
+        viewport.setProperties({
+          voiRange: {
+            upper,
+            lower,
+          },
+        });
+      }
       viewport.render();
     },
     toggleViewportColorbar: ({ viewportId, displaySetInstanceUIDs, options = {} }) => {
@@ -844,9 +827,18 @@ function commandsModule({
 
       actions.setViewportWindowLevel({
         viewportId: activeViewport,
-        window: windowLevelPreset.window,
-        level: windowLevelPreset.level,
+        windowWidth: windowLevelPreset.window,
+        windowCenter: windowLevelPreset.level,
       });
+    },
+    getVolumeIdForDisplaySet: ({ viewportId, displaySetInstanceUID }) => {
+      const viewport = cornerstoneViewportService.getCornerstoneViewport(viewportId);
+      if (viewport instanceof BaseVolumeViewport) {
+        const volumeIds = viewport.getAllVolumeIds();
+        const volumeId = volumeIds.find(id => id.includes(displaySetInstanceUID));
+        return volumeId;
+      }
+      return null;
     },
     setToolEnabled: ({ toolName, toggle, toolGroupId }) => {
       const { viewports } = viewportGridService.getState();
@@ -936,7 +928,7 @@ function commandsModule({
         return;
       }
 
-      if (!toolGroup.hasTool(toolName)) {
+      if (!toolGroup?.hasTool(toolName)) {
         return;
       }
 
@@ -972,66 +964,42 @@ function commandsModule({
         return;
       }
 
-      const { uiModalService, displaySetService } = servicesManager.services;
+      const { uiModalService } = servicesManager.services;
 
       if (uiModalService) {
-        // Check if current study has US modality
-        const activeDisplaySets = displaySetService.getActiveDisplaySets();
-        const hasUSModality = activeDisplaySets.some((ds: any) =>
-          ds.Modality === 'US' ||
-          (ds.instances && ds.instances.some((instance: any) => instance.Modality === 'US'))
-        );
-
-        if (hasUSModality) {
-          // Show US capture modal with 2x4 grid layout
-          uiModalService.show({
-            content: USCaptureModal,
-            title: 'US Printer Layout',
-            contentProps: {
-              servicesManager,
-            },
-            containerClassName: 'max-w-5xl p-4',
-          });
-        } else {
-          // Show regular capture modal
-          uiModalService.show({
-            content: CornerstoneViewportDownloadForm,
-            title: 'Download High Quality Image',
-            contentProps: {
-              activeViewportId,
-              cornerstoneViewportService,
-            },
-            containerClassName: 'max-w-4xl p-4',
-          });
-        }
+        uiModalService.show({
+          content: CornerstoneViewportDownloadForm,
+          title: 'Download High Quality Image',
+          contentProps: {
+            activeViewportId,
+            cornerstoneViewportService,
+          },
+          containerClassName: 'max-w-4xl p-4',
+        });
       }
     },
-    rotateViewport: ({ rotation }) => {
-      const enabledElement = _getActiveViewportEnabledElement();
-      if (!enabledElement) {
-        return;
-      }
-
-      const { viewport } = enabledElement;
-
-      if (viewport instanceof BaseVolumeViewport) {
-        const camera = viewport.getCamera();
-        const rotAngle = (rotation * Math.PI) / 180;
-        const rotMat = mat4.identity(new Float32Array(16));
-        mat4.rotate(rotMat, rotMat, rotAngle, camera.viewPlaneNormal);
-        const rotatedViewUp = vec3.transformMat4(vec3.create(), camera.viewUp, rotMat);
-        viewport.setCamera({ viewUp: rotatedViewUp as CoreTypes.Point3 });
-        viewport.render();
-      } else if (viewport.getRotation !== undefined) {
-        const presentation = viewport.getViewPresentation();
-        const { rotation: currentRotation } = presentation;
-        const newRotation = (currentRotation + rotation + 360) % 360;
-        viewport.setViewPresentation({ rotation: newRotation });
-        viewport.render();
-      }
+    /**
+     * Rotates the viewport by `rotation` relative to its current rotation.
+     */
+    rotateViewportBy: ({ rotation, viewportId }: { rotation: number; viewportId?: string }) => {
+      actions._rotateViewport({ rotation, viewportId, rotationMode: 'apply' });
     },
-    flipViewportHorizontal: () => {
-      const enabledElement = _getActiveViewportEnabledElement();
+    /**
+     * Sets the viewport rotation to an absolute value `rotation`.
+     */
+    setViewportRotation: ({ rotation, viewportId }: { rotation: number; viewportId?: string }) => {
+      actions._rotateViewport({ rotation, viewportId, rotationMode: 'set' });
+    },
+    flipViewportHorizontal: ({
+      viewportId,
+      newValue = 'toggle',
+    }: {
+      viewportId?: string;
+      newValue?: 'toggle' | boolean;
+    }) => {
+      const enabledElement = viewportId
+        ? _getViewportEnabledElement(viewportId)
+        : _getActiveViewportEnabledElement();
 
       if (!enabledElement) {
         return;
@@ -1039,12 +1007,27 @@ function commandsModule({
 
       const { viewport } = enabledElement;
 
-      const { flipHorizontal } = viewport.getCamera();
-      viewport.setCamera({ flipHorizontal: !flipHorizontal });
+      let flipHorizontal: boolean;
+      if (newValue === 'toggle') {
+        const { flipHorizontal: currentHorizontalFlip } = viewport.getCamera();
+        flipHorizontal = !currentHorizontalFlip;
+      } else {
+        flipHorizontal = newValue;
+      }
+
+      viewport.setCamera({ flipHorizontal });
       viewport.render();
     },
-    flipViewportVertical: () => {
-      const enabledElement = _getActiveViewportEnabledElement();
+    flipViewportVertical: ({
+      viewportId,
+      newValue = 'toggle',
+    }: {
+      viewportId?: string;
+      newValue?: 'toggle' | boolean;
+    }) => {
+      const enabledElement = viewportId
+        ? _getViewportEnabledElement(viewportId)
+        : _getActiveViewportEnabledElement();
 
       if (!enabledElement) {
         return;
@@ -1052,8 +1035,14 @@ function commandsModule({
 
       const { viewport } = enabledElement;
 
-      const { flipVertical } = viewport.getCamera();
-      viewport.setCamera({ flipVertical: !flipVertical });
+      let flipVertical: boolean;
+      if (newValue === 'toggle') {
+        const { flipVertical: currentVerticalFlip } = viewport.getCamera();
+        flipVertical = !currentVerticalFlip;
+      } else {
+        flipVertical = newValue;
+      }
+      viewport.setCamera({ flipVertical });
       viewport.render();
     },
     invertViewport: ({ element }) => {
@@ -1256,7 +1245,7 @@ function commandsModule({
 
       const toolGroup = toolGroupService.getToolGroupForViewport(viewportId);
 
-      if (!toolGroup.hasTool(toolName)) {
+      if (!toolGroup?.hasTool(toolName)) {
         return;
       }
 
@@ -1426,6 +1415,9 @@ function commandsModule({
     },
     /**
      * Creates a labelmap for the active viewport
+     *
+     * The created labelmap will be registered as a display set and also added
+     * as a segmentation representation to the viewport.
      */
     createLabelmapForViewport: async ({ viewportId, options = {} }) => {
       const { viewportGridService, displaySetService, segmentationService } =
@@ -1446,6 +1438,7 @@ function commandsModule({
 
       const displaySet = displaySetService.getDisplaySetByUID(displaySetInstanceUID);
 
+      // This will create the segmentation and register it as a display set
       const generatedSegmentationId = await segmentationService.createLabelmapForDisplaySet(
         displaySet,
         {
@@ -1462,6 +1455,7 @@ function commandsModule({
         }
       );
 
+      // Also add the segmentation representation to the viewport
       await segmentationService.addSegmentationRepresentation(viewportId, {
         segmentationId,
         type: Enums.SegmentationRepresentations.Labelmap,
@@ -1817,6 +1811,62 @@ function commandsModule({
         }
       });
     },
+    toggleSegmentLabel: () => {
+      const toolName = cornerstoneTools.SegmentLabelTool.toolName;
+      const toolGroupIds = toolGroupService.getToolGroupIds();
+
+      const isOn = toolGroupIds.some(toolGroupId => {
+        const toolGroup = cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupId);
+        const mode = toolGroup.getToolInstance(toolName)?.mode;
+        return mode === 'Active';
+      });
+
+      toolGroupIds.forEach(toolGroupId => {
+        const toolGroup = cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupId);
+        if (isOn) {
+          toolGroup.setToolDisabled(toolName);
+        } else {
+          toolGroup.setToolActive(toolName);
+        }
+      });
+    },
+    /**
+     * Used to sync the apps initial state with the config file settings.
+     *
+     * Will mutate the tools object of the given tool group and add the segmentLabelTool to the proper place.
+     *
+     * Use it before initializing the toolGroup with the tools.
+     */
+    initializeSegmentLabelTool: ({ tools }) => {
+      const appConfig = extensionManager.appConfig;
+      const segmentLabelConfig = appConfig.segmentation?.segmentLabel;
+
+      if (segmentLabelConfig?.enabledByDefault) {
+        const activeTools = tools?.active ?? [];
+        activeTools.push({
+          toolName: toolNames.SegmentLabel,
+          configuration: {
+            hoverTimeout: segmentLabelConfig?.hoverTimeout ?? 1,
+            color: segmentLabelConfig?.labelColor,
+            background: segmentLabelConfig?.background,
+          },
+        });
+
+        tools.active = activeTools;
+        return tools;
+      }
+
+      const disabledTools = tools?.disabled ?? [];
+      disabledTools.push({
+        toolName: toolNames.SegmentLabel,
+        configuration: {
+          hoverTimeout: segmentLabelConfig?.hoverTimeout ?? 1,
+          color: segmentLabelConfig?.labelColor,
+        },
+      });
+      tools.disabled = disabledTools;
+      return tools;
+    },
     toggleUseCenterSegmentIndex: ({ toggle }) => {
       let labelmapTools = getLabelmapTools({ toolGroupService });
       labelmapTools = labelmapTools.filter(tool => !tool.toolName.includes('Eraser'));
@@ -1828,14 +1878,15 @@ function commandsModule({
       });
     },
     _handlePreviewAction: action => {
-      const labelmapTools = getLabelmapTools({ toolGroupService });
       const { viewport } = _getActiveViewportEnabledElement();
-      const activeTools = labelmapTools.filter(
-        tool => tool.mode === 'Active' || tool.mode === 'Enabled'
-      );
+      const previewTools = getPreviewTools({ toolGroupService });
 
-      activeTools.forEach(tool => {
-        tool[`${action}Preview`]();
+      previewTools.forEach(tool => {
+        try {
+          tool[`${action}Preview`]();
+        } catch (error) {
+          console.debug('Error accepting preview for tool', tool.toolName);
+        }
       });
 
       if (segmentAI.enabled) {
@@ -1962,6 +2013,9 @@ function commandsModule({
       const { segmentationService } = servicesManager.services;
       const { activeViewportId } = viewportGridService.getState();
       const activeSegmentation = segmentationService.getActiveSegmentation(activeViewportId);
+      if (!activeSegmentation) {
+        return;
+      }
       segmentationService.addSegment(activeSegmentation.segmentationId);
     },
     loadSegmentationDisplaySetsForViewport: ({ viewportId, displaySetInstanceUIDs }) => {
@@ -1971,141 +2025,164 @@ function commandsModule({
         displaySetInstanceUIDs,
       });
 
-      updatedViewports.forEach(viewport => {
-        viewportGridService.setDisplaySetsForViewport({
+      actions.setDisplaySetsForViewports({
+        viewportsToUpdate: updatedViewports.map(viewport => ({
           viewportId: viewport.viewportId,
           displaySetInstanceUIDs: viewport.displaySetInstanceUIDs,
-        });
+        })),
       });
     },
+    setViewportOrientation: ({ viewportId, orientation }) => {
+      const viewport = cornerstoneViewportService.getCornerstoneViewport(viewportId);
 
+      if (!viewport || viewport.type !== CoreEnums.ViewportType.ORTHOGRAPHIC) {
+        console.warn('Orientation can only be set on volume viewports');
+        return;
+      }
+
+      // Get display sets for this viewport to verify at least one is reconstructable
+      const displaySetUIDs = viewportGridService.getDisplaySetsUIDsForViewport(viewportId);
+      const displaySets = displaySetUIDs.map(uid => displaySetService.getDisplaySetByUID(uid));
+
+      if (!displaySets.some(ds => ds.isReconstructable)) {
+        console.warn('Cannot change orientation: No reconstructable display sets in viewport');
+        return;
+      }
+
+      viewport.setOrientation(orientation);
+      viewport.render();
+
+      // update the orientation in the viewport info
+      const viewportInfo = cornerstoneViewportService.getViewportInfo(viewportId);
+      viewportInfo.setOrientation(orientation);
+    },
     /**
-     * Toggles crosshairs and reference lines visibility when clicked
-     * Primarily used when user clicks on crosshairs in MPR mode
+     * Toggles the horizontal flip state of the viewport.
      */
-    toggleCrosshairsAndReferenceLines: ({ event }) => {
-      // Check if we clicked on crosshairs tool
-      const nearbyToolData = findNearbyToolData(commandsManager, event);
-      if (!nearbyToolData || nearbyToolData.toolName !== 'Crosshairs') {
-        return; // Only handle crosshairs clicks
-      }
-
-      const { toolGroupService } = servicesManager.services;
-
-      // Get the active tool group (typically 'mpr' in MPR mode)
-      const activeViewportId = _getActiveViewportEnabledElement()?.viewport?.id;
-      if (!activeViewportId) {
-        return;
-      }
-
-      const toolGroup = toolGroupService.getToolGroupForViewport(activeViewportId);
-      if (!toolGroup) {
-        return;
-      }
-
-      // Check current state of crosshairs and reference lines
-      const crosshairsState = toolGroup.getToolOptions('Crosshairs')?.mode;
-      const referenceLinesState = toolGroup.getToolOptions('ReferenceLines')?.mode;
-
-      // Toggle both tools together
-      if (crosshairsState === Enums.ToolModes.Active ||
-          crosshairsState === Enums.ToolModes.Passive) {
-        // Disable both tools
-        toolGroup.setToolDisabled('Crosshairs');
-        toolGroup.setToolDisabled('ReferenceLines');
-      } else {
-        // Enable both tools
-        toolGroup.setToolActive('Crosshairs');
-        toolGroup.setToolEnabled('ReferenceLines');
-      }
-
-      // Render the viewport to show changes
-      const renderingEngine = cornerstoneViewportService.getRenderingEngine();
-      renderingEngine.render();
+    toggleViewportHorizontalFlip: ({ viewportId }: { viewportId?: string } = {}) => {
+      actions.flipViewportHorizontal({ viewportId, newValue: 'toggle' });
     },
 
     /**
-     * Sets reference lines only mode for dual viewport (axial/sagittal) - disables crosshairs
+     * Explicitly sets the horizontal flip state of the viewport.
      */
-    setReferenceLinesOnlyMode: () => {
-      const { toolGroupService, viewportGridService } = servicesManager.services;
+    setViewportHorizontalFlip: ({
+      flipped,
+      viewportId,
+    }: {
+      flipped: boolean;
+      viewportId?: string;
+    }) => {
+      actions.flipViewportHorizontal({ viewportId, newValue: flipped });
+    },
 
-      // Get all active viewports
-      const viewports = viewportGridService.getViewports();
-      const activeViewports = Object.entries(viewports).filter(([, viewport]) =>
-        viewport && viewport.displaySetInstanceUIDs?.length > 0
+    /**
+     * Toggles the vertical flip state of the viewport.
+     */
+    toggleViewportVerticalFlip: ({ viewportId }: { viewportId?: string } = {}) => {
+      actions.flipViewportVertical({ viewportId, newValue: 'toggle' });
+    },
+
+    /**
+     * Explicitly sets the vertical flip state of the viewport.
+     */
+    setViewportVerticalFlip: ({
+      flipped,
+      viewportId,
+    }: {
+      flipped: boolean;
+      viewportId?: string;
+    }) => {
+      actions.flipViewportVertical({ viewportId, newValue: flipped });
+    },
+    /**
+     * Internal helper to rotate or set absolute rotation for a viewport.
+     */
+    _rotateViewport: ({
+      rotation,
+      viewportId,
+      rotationMode = 'apply',
+    }: {
+      rotation: number;
+      viewportId?: string;
+      rotationMode?: 'apply' | 'set';
+    }) => {
+      const enabledElement = viewportId
+        ? _getViewportEnabledElement(viewportId)
+        : _getActiveViewportEnabledElement();
+
+      if (!enabledElement) {
+        return;
+      }
+
+      const { viewport } = enabledElement;
+
+      if (viewport instanceof BaseVolumeViewport) {
+        const camera = viewport.getCamera();
+        const rotAngle = (rotation * Math.PI) / 180;
+        const rotMat = mat4.identity(new Float32Array(16));
+        mat4.rotate(rotMat, rotMat, rotAngle, camera.viewPlaneNormal);
+        const rotatedViewUp = vec3.transformMat4(vec3.create(), camera.viewUp, rotMat);
+        viewport.setCamera({ viewUp: rotatedViewUp as CoreTypes.Point3 });
+        viewport.render();
+        return;
+      }
+
+      if (viewport.getRotation !== undefined) {
+        const { rotation: currentRotation } = viewport.getViewPresentation();
+        const newRotation =
+          rotationMode === 'apply'
+            ? (currentRotation + rotation + 360) % 360
+            : (() => {
+                // In 'set' mode, account for the effect horizontal/vertical flips
+                // have on the perceived rotation direction. A single flip mirrors
+                // the image and inverses rotation direction, while two flips
+                // restore the original parity. We therefore invert the rotation
+                // angle when an odd number of flips are applied so that the
+                // requested absolute rotation matches the user expectation.
+                const { flipHorizontal = false, flipVertical = false } =
+                  viewport.getViewPresentation();
+
+                const flipsParity = (flipHorizontal ? 1 : 0) + (flipVertical ? 1 : 0);
+                const effectiveRotation = flipsParity % 2 === 1 ? -rotation : rotation;
+
+                return (effectiveRotation + 360) % 360;
+              })();
+        viewport.setViewPresentation({ rotation: newRotation });
+        viewport.render();
+      }
+    },
+    startRecordingForAnnotationGroup: () => {
+      cornerstoneTools.AnnotationTool.startGroupRecording();
+    },
+    endRecordingForAnnotationGroup: () => {
+      cornerstoneTools.AnnotationTool.endGroupRecording();
+    },
+    triggerCreateAnnotationMemo: ({
+      annotation,
+      FrameOfReferenceUID,
+      options,
+    }: {
+      annotation: ToolTypes.Annotation;
+      FrameOfReferenceUID: string;
+      options: { newAnnotation?: boolean; deleting?: boolean };
+    }): void => {
+      const { newAnnotation, deleting } = options;
+      const renderingEngines = getRenderingEngines();
+      const viewports = renderingEngines.flatMap(re => re.getViewports());
+      const validViewport = viewports.find(
+        vp => vp.getFrameOfReferenceUID() === FrameOfReferenceUID
       );
 
-      // Check if we have exactly 2 viewports (dual view)
-      if (activeViewports.length === 2) {
-        activeViewports.forEach(([viewportId]) => {
-          const toolGroup = toolGroupService.getToolGroupForViewport(viewportId);
-          if (toolGroup && toolGroup.hasTool('Crosshairs') && toolGroup.hasTool('ReferenceLines')) {
-            // Disable crosshairs but keep reference lines enabled
-            toolGroup.setToolDisabled('Crosshairs');
-            toolGroup.setToolEnabled('ReferenceLines');
-
-            // Set reference line configuration
-            const prevConfig = toolGroup.getToolConfiguration('ReferenceLines') || {};
-            toolGroup.setToolConfiguration(
-              'ReferenceLines',
-              { ...prevConfig, sourceViewportId: viewportId },
-              true
-            );
-          }
-        });
-
-        // Render all viewports to show changes
-        const renderingEngine = cornerstoneViewportService.getRenderingEngine();
-        renderingEngine.render();
-      }
-    },
-
-    // Mobile MPR cycling command - cycles through Axial -> Coronal -> Sagittal
-    cycleMPROnMobile: () => {
-      const isMobile = window.matchMedia('(max-width: 768px)').matches;
-      if (!isMobile) {
-        // For desktop, use regular MPR
-        commandsManager.runCommand('toggleHangingProtocol', { protocolId: 'primaryAxiaMobile' });
-        commandsManager.runCommand('setToolActiveToolbar', {
-          toolGroupIds: ['mpr', 'primaryAxiaMobile'],
-          toolName: 'Crosshairs',
-        });
+      if (!validViewport) {
         return;
       }
 
-      // Get current protocol to determine next orientation
-      const { hangingProtocolService } = servicesManager.services;
-      const currentProtocol = hangingProtocolService.getActiveProtocol();
-
-      let nextProtocolId;
-
-      console.log('currentProtocol <<< >>', currentProtocol);
-      // Determine next orientation based on current protocol
-      if (!currentProtocol?.protocol?.id || currentProtocol.protocol.id === 'primaryAxiaMobile' || currentProtocol.protocol.id === 'axial') {
-        // First click or currently in axial -> go to coronal
-        nextProtocolId = 'coronal';
-      } else if (currentProtocol.protocol.id === 'coronal') {
-        // Currently in coronal -> go to sagittal
-        nextProtocolId = 'sagittal';
-      } else if (currentProtocol.protocol.id === 'sagittal') {
-        // Currently in sagittal -> go back to axial
-        nextProtocolId = 'axial';
-      } else {
-        // Default to axial for any other protocol
-        nextProtocolId = 'axial';
-      }
-
-      // Apply the next protocol
-      commandsManager.runCommand('toggleHangingProtocol', { protocolId: nextProtocolId });
-
-      // Activate crosshairs tool for MPR
-      commandsManager.runCommand('setToolActiveToolbar', {
-        toolGroupIds: ['default'],
-        toolName: 'Crosshairs'
+      cornerstoneTools.AnnotationTool.createAnnotationMemo(validViewport.element, annotation, {
+        newAnnotation,
+        deleting,
       });
     },
-
   };
 
   const definitions = {
@@ -2121,18 +2198,6 @@ function commandsModule({
           },
         ],
       },
-    },
-
-    showSpinnerContextMenu: {
-      commandFn: actions.showSpinnerContextMenu,
-    },
-
-    cycleMPROnMobile: {
-      commandFn: actions.cycleMPROnMobile,
-    },
-
-    setReferenceLinesOnlyMode: {
-      commandFn: actions.setReferenceLinesOnlyMode,
     },
 
     getNearbyToolData: {
@@ -2155,9 +2220,7 @@ function commandsModule({
     updateMeasurement: {
       commandFn: actions.updateMeasurement,
     },
-    jumpToMeasurement: {
-      commandFn: actions.jumpToMeasurement,
-    },
+    jumpToMeasurement: actions.jumpToMeasurement,
     removeMeasurement: {
       commandFn: actions.removeMeasurement,
     },
@@ -2189,12 +2252,16 @@ function commandsModule({
       commandFn: actions.setToolEnabled,
     },
     rotateViewportCW: {
-      commandFn: actions.rotateViewport,
+      commandFn: actions.rotateViewportBy,
       options: { rotation: 90 },
     },
     rotateViewportCCW: {
-      commandFn: actions.rotateViewport,
+      commandFn: actions.rotateViewportBy,
       options: { rotation: -90 },
+    },
+    rotateViewportCWSet: {
+      commandFn: actions.setViewportRotation,
+      options: { rotation: 90 },
     },
     incrementActiveViewport: {
       commandFn: actions.changeActiveViewport,
@@ -2204,10 +2271,18 @@ function commandsModule({
       options: { direction: -1 },
     },
     flipViewportHorizontal: {
-      commandFn: actions.flipViewportHorizontal,
+      commandFn: actions.toggleViewportHorizontalFlip,
     },
     flipViewportVertical: {
-      commandFn: actions.flipViewportVertical,
+      commandFn: actions.toggleViewportVerticalFlip,
+    },
+    setViewportHorizontalFlip: {
+      commandFn: actions.setViewportHorizontalFlip,
+      options: { flipped: true },
+    },
+    setViewportVerticalFlip: {
+      commandFn: actions.setViewportVerticalFlip,
+      options: { flipped: true },
     },
     invertViewport: {
       commandFn: actions.invertViewport,
@@ -2398,7 +2473,15 @@ function commandsModule({
     decreaseBrushSize: actions.decreaseBrushSize,
     addNewSegment: actions.addNewSegment,
     loadSegmentationDisplaySetsForViewport: actions.loadSegmentationDisplaySetsForViewport,
-    toggleCrosshairsAndReferenceLines: actions.toggleCrosshairsAndReferenceLines,
+    setViewportOrientation: actions.setViewportOrientation,
+    hydrateSecondaryDisplaySet: actions.hydrateSecondaryDisplaySet,
+    getVolumeIdForDisplaySet: actions.getVolumeIdForDisplaySet,
+    triggerCreateAnnotationMemo: actions.triggerCreateAnnotationMemo,
+    startRecordingForAnnotationGroup: actions.startRecordingForAnnotationGroup,
+    endRecordingForAnnotationGroup: actions.endRecordingForAnnotationGroup,
+    toggleSegmentLabel: actions.toggleSegmentLabel,
+    jumpToMeasurementViewport: actions.jumpToMeasurementViewport,
+    initializeSegmentLabelTool: actions.initializeSegmentLabelTool,
   };
 
   return {

@@ -11,19 +11,17 @@ export const setToolActiveToolbar = {
 const toolbarButtons: Button[] = [
   // sections
   {
-    id: 'measurementSection',
+    id: 'MeasurementTools',
     uiType: 'ohif.toolButtonList',
     props: {
-      buttonSection: 'measurementSection',
-      groupId: 'measurementSection',
+      buttonSection: true,
     },
   },
   {
     id: 'MoreTools',
     uiType: 'ohif.toolButtonList',
     props: {
-      buttonSection: 'moreToolsSection',
-      groupId: 'MoreTools',
+      buttonSection: true,
     },
   },
 
@@ -155,23 +153,6 @@ const toolbarButtons: Button[] = [
       columns: 4,
       evaluate: 'evaluate.action',
       commands: 'setViewportGridLayout',
-    },
-  },
-
-  {
-    id: 'MPR',
-    uiType: 'ohif.toolButton',
-    props: {
-      icon: 'icon-mpr',
-      label: 'MPR',
-      tooltip: 'MPR',
-      commands: {
-        commandName: 'toggleHangingProtocol',
-        commandOptions: {
-          protocolId: 'mpr',
-        },
-      },
-      evaluate: 'evaluate.displaySetIsReconstructable',
     },
   },
 

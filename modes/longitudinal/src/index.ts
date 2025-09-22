@@ -90,28 +90,47 @@ function modeFactory({ modeConfiguration }) {
       // Init Default and SR ToolGroups
       initToolGroups(extensionManager, toolGroupService, commandsManager);
 
-      toolbarService.addButtons(toolbarButtons);
-      toolbarService.createButtonSection('primary', [
+      toolbarService.register(toolbarButtons);
+      toolbarService.updateSection(toolbarService.sections.primary, [
         'MeasurementTools',
         'Zoom',
         'Pan',
+        'TrackballRotate',
         'WindowLevel',
-        'invert',
-        'ImageSliceSync',
-        'flipHorizontal',
         'Capture',
         'Layout',
-        'TwoPanel',
-        'StackScroll',
-        'MPR',
-        '3D',
-        'Axial',
-        'Coronal',
-        'Sagittal',
+        'Crosshairs',
         'MoreTools',
       ]);
 
-      toolbarService.createButtonSection('measurementSection', [
+      toolbarService.updateSection(toolbarService.sections.viewportActionMenu.topLeft, [
+        'orientationMenu',
+        'dataOverlayMenu',
+      ]);
+
+      toolbarService.updateSection(toolbarService.sections.viewportActionMenu.bottomMiddle, [
+        'AdvancedRenderingControls',
+      ]);
+
+      toolbarService.updateSection('AdvancedRenderingControls', [
+        'windowLevelMenuEmbedded',
+        'voiManualControlMenu',
+        'Colorbar',
+        'opacityMenu',
+        'thresholdMenu',
+      ]);
+
+      toolbarService.updateSection(toolbarService.sections.viewportActionMenu.topRight, [
+        'modalityLoadBadge',
+        'trackingStatus',
+        'navigationComponent',
+      ]);
+
+      toolbarService.updateSection(toolbarService.sections.viewportActionMenu.bottomLeft, [
+        'windowLevelMenu',
+      ]);
+
+      toolbarService.updateSection('MeasurementTools', [
         'Length',
         'Bidirectional',
         'ArrowAnnotate',
@@ -123,18 +142,14 @@ function modeFactory({ modeConfiguration }) {
         'LivewireContour',
       ]);
 
-      toolbarService.createButtonSection('moreToolsSection', [
+      toolbarService.updateSection('MoreTools', [
         'Reset',
-        'Axial',
-        'Coronal',
-        'Sagittal',
-        'Crosshairs',
         'rotate-right',
         'flipHorizontal',
         'ImageSliceSync',
         'ReferenceLines',
         'ImageOverlayViewer',
-        'TrackballRotate',
+        'StackScroll',
         'invert',
         'Probe',
         'Cine',
@@ -146,22 +161,12 @@ function modeFactory({ modeConfiguration }) {
         'AdvancedMagnify',
         'UltrasoundDirectionalTool',
         'WindowLevelRegion',
-        'Layout',
+        'SegmentLabelTool',
       ]);
 
       customizationService.setCustomizations({
         'panelSegmentation.disableEditing': {
           $set: true,
-        },
-        'ohif.hotkeyBindings': {
-          $push: [
-            {
-              commandName: 'showSpinnerContextMenu',
-              label: 'Show Spinner Menu',
-              keys: ['space'],
-              isEditable: true,
-            },
-          ],
         },
       });
 
@@ -251,13 +256,12 @@ function modeFactory({ modeConfiguration }) {
                   displaySetsToDisplay: [
                     ohif.sopClassHandler,
                     dicomvideo.sopClassHandler,
-                    dicomsr.sopClassHandler3D,
                     ohif.wsiSopClassHandler,
                   ],
                 },
                 {
                   namespace: dicomsr.viewport,
-                  displaySetsToDisplay: [dicomsr.sopClassHandler],
+                  displaySetsToDisplay: [dicomsr.sopClassHandler, dicomsr.sopClassHandler3D],
                 },
                 {
                   namespace: dicompdf.viewport,
