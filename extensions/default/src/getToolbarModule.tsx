@@ -1,4 +1,4 @@
-import { utils } from '@ohif/ui-next';
+import { ToolButton, utils } from '@ohif/ui-next';
 
 import ToolbarLayoutSelectorWithServices from './Toolbar/ToolbarLayoutSelector';
 
@@ -17,7 +17,7 @@ export default function getToolbarModule({ commandsManager, servicesManager }: w
     // new
     {
       name: 'ohif.toolButton',
-      defaultComponent: ToolButtonWrapper,
+      defaultComponent: ToolButton,
     },
     {
       name: 'ohif.toolButtonList',

@@ -1,0 +1,265 @@
+/*
+ * OHIF Dark Theme - Centralized Color Configuration
+ *
+ * This file contains all color definitions for the OHIF viewer dark theme.
+ * Change colors here to update the entire application theme.
+ *
+ * Color format: HSL values without hsl() wrapper (e.g., "220 70% 50%")
+ * This format is compatible with Tailwind CSS custom properties.
+ */
+
+@layer base {
+  :root {
+    /* ================================
+     * DARK THEME COLOR PALETTE
+     * ================================ */
+
+    /* Primary Brand Colors */
+    --ohif-primary: 0 0% 100%;             /* Bright white - main brand color */
+    --ohif-primary-dark: 0 0% 40%;      /* Darker blue for hover states */
+    --ohif-primary-light: 0 0% 100%;     /* Lighter blue for accents */
+    --ohif-primary-foreground: 0 0% 100%;   /* Text on primary background */
+
+    /* Secondary Colors */
+    --ohif-secondary: 0 0% 40%;         /* Medium blue */
+    --ohif-secondary-dark: 0 0% 7% 1;;    /* Darker secondary */
+    --ohif-secondary-light: 0 0% 100%;   /* Lighter secondary */
+    --ohif-secondary-foreground: 0 0% 100%; /* Text on secondary */
+
+    /* Background Colors */
+    --ohif-background: 220 25% 8%;         /* Main dark background */
+    --ohif-background-darker: 0 0% 7% 1;  /* Darker background variant */
+    --ohif-background-lighter: 0 0% 7% 1; /* Lighter background variant */
+    --ohif-foreground: 0 0% 98%;           /* Main text color */
+
+    /* Surface Colors (Cards, Panels, etc.) */
+    --ohif-card: 220 25% 10%;              /* Card background */
+    --ohif-card-darker: 0 0% 25%;        /* Darker card variant */
+    --ohif-card-foreground: 0 0% 98%;      /* Text on cards */
+
+    /* Interactive Elements */
+    --ohif-muted: 220 20% 15%;             /* Muted backgrounds */
+    --ohif-muted-foreground: 0 0% 80%;  /* Muted text */
+    --ohif-accent: 0 0% 25%;            /* Accent color */
+    --ohif-accent-foreground: 0 0% 98%;    /* Text on accent */
+
+    /* Borders and Inputs */
+    --ohif-border: 0 0% 20%;            /* Default border color */
+    --ohif-border-light: 220 15% 25%;      /* Lighter border */
+    --ohif-border-dark: 0 0% 50%;         /* Darker border */
+    --ohif-input:  0 0% 0%;             /* Input background */
+    --ohif-input-border: 220 20% 25%;      /* Input border */
+
+    /* Status Colors */
+    --ohif-success: 142 76% 36%;           /* Success green */
+    --ohif-success-bg: 142 76% 8%;         /* Success background */
+    --ohif-success-border: 142 76% 15%;    /* Success border */
+    --ohif-success-foreground: 142 76% 85%; /* Success text */
+
+    --ohif-warning: 38 92% 50%;            /* Warning orange */
+    --ohif-warning-bg: 38 92% 8%;          /* Warning background */
+    --ohif-warning-border: 38 92% 15%;     /* Warning border */
+    --ohif-warning-foreground: 38 92% 85%; /* Warning text */
+
+    --ohif-error: 0 84% 60%;               /* Error red */
+    --ohif-error-bg: 0 84% 8%;             /* Error background */
+    --ohif-error-border: 0 84% 15%;        /* Error border */
+    --ohif-error-foreground: 0 84% 85%;    /* Error text */
+
+    --ohif-info: 217 91% 60%;              /* Info blue */
+    --ohif-info-bg: 217 91% 8%;            /* Info background */
+    --ohif-info-border: 217 91% 15%;       /* Info border */
+    --ohif-info-foreground: 217 91% 85%;   /* Info text */
+
+    /* Medical Imaging Specific Colors */
+    --ohif-highlight: var(--ohif-primary);         /* Measurement highlights */
+    --ohif-overlay: 0 0% 0% / 0.8;         /* Modal overlays */
+    --ohif-viewport-bg: 220 30% 4%;        /* Viewport background */
+    --ohif-toolbar-bg: 220 25% 9%;         /* Toolbar background */
+    --ohif-panel-bg: 220 25% 8%;           /* Side panel background */
+    --ohif-selected-series-bg: 39 100% 20%;   /* Selected series background */
+    --ohif-selected-series-border: 39 100% 50%;   /* Selected series border */
+
+    /* Chart Colors for Data Visualization */
+    --ohif-chart-1: 220 70% 50%;           /* Chart color 1 */
+    --ohif-chart-2: 160 60% 45%;           /* Chart color 2 */
+    --ohif-chart-3: 30 80% 55%;            /* Chart color 3 */
+    --ohif-chart-4: 280 65% 60%;           /* Chart color 4 */
+    --ohif-chart-5: 340 75% 55%;           /* Chart color 5 */
+
+    /* Legacy Color Mappings */
+    --ohif-neutral: 220 15% 60%;           /* Neutral color */
+    --ohif-destructive: 0 62.8% 30.6%;     /* Destructive actions */
+    --ohif-destructive-foreground: 0 0% 98%; /* Text on destructive */
+    --ohif-ring: 214 98% 60%;              /* Focus ring color */
+    --ohif-radius: 0.5rem;                 /* Border radius */
+
+    /* ================================
+     * APPLY COLORS TO CSS VARIABLES
+     * ================================ */
+
+    /* Modern UI (ui-next) Variables */
+    --highlight: var(--ohif-highlight);
+    --neutral: var(--ohif-neutral);
+    --background: var(--ohif-background);
+    --foreground: var(--ohif-foreground);
+    --card: var(--ohif-card);
+    --card-foreground: var(--ohif-card-foreground);
+    --popover: var(--ohif-card-darker);
+    --popover-foreground: var(--ohif-foreground);
+    --primary: var(--ohif-primary);
+    --primary-foreground: var(--ohif-primary-foreground);
+    --secondary: var(--ohif-secondary);
+    --secondary-foreground: var(--ohif-secondary-foreground);
+    --muted: var(--ohif-muted);
+    --muted-foreground: var(--ohif-muted-foreground);
+    --accent: var(--ohif-accent);
+    --accent-foreground: var(--ohif-accent-foreground);
+    --destructive: var(--ohif-destructive);
+    --destructive-foreground: var(--ohif-destructive-foreground);
+    --border: var(--ohif-border);
+    --input: var(--ohif-input);
+    --ring: var(--ohif-ring);
+    --radius: var(--ohif-radius);
+    --chart-1: var(--ohif-chart-1);
+    --chart-2: var(--ohif-chart-2);
+    --chart-3: var(--ohif-chart-3);
+    --chart-4: var(--ohif-chart-4);
+    --chart-5: var(--ohif-chart-5);
+
+    /* Status Colors */
+    --success-bg: hsl(var(--ohif-success-bg));
+    --success-border: hsl(var(--ohif-success-border));
+    --success-text: hsl(var(--ohif-success-foreground));
+    --info-bg: hsl(var(--ohif-info-bg));
+    --info-border: hsl(var(--ohif-info-border));
+    --info-text: hsl(var(--ohif-info-foreground));
+    --warning-bg: hsl(var(--ohif-warning-bg));
+    --warning-border: hsl(var(--ohif-warning-border));
+    --warning-text: hsl(var(--ohif-warning-foreground));
+    --error-bg: hsl(var(--ohif-error-bg));
+    --error-border: hsl(var(--ohif-error-border));
+    --error-text: hsl(var(--ohif-error-foreground));
+  }
+
+  /* ================================
+   * DARK MODE CLASS OVERRIDES
+   * ================================ */
+
+  .dark {
+    /* Ensure dark mode uses the same colors */
+    --background: var(--ohif-background);
+    --foreground: var(--ohif-foreground);
+    --card: var(--ohif-card);
+    --card-foreground: var(--ohif-card-foreground);
+    --popover: var(--ohif-card-darker);
+    --popover-foreground: var(--ohif-foreground);
+    --primary: var(--ohif-primary);
+    --primary-foreground: var(--ohif-primary-foreground);
+    --secondary: var(--ohif-muted);
+    --secondary-foreground: var(--ohif-foreground);
+    --muted: var(--ohif-muted);
+    --muted-foreground: var(--ohif-muted-foreground);
+    --accent: var(--ohif-muted);
+    --accent-foreground: var(--ohif-foreground);
+    --destructive: var(--ohif-destructive);
+    --destructive-foreground: var(--ohif-destructive-foreground);
+    --border: var(--ohif-border);
+    --input: var(--ohif-input);
+    --ring: var(--ohif-ring);
+  }
+}
+
+/* ================================
+ * UTILITY CLASSES
+ * ================================ */
+
+@layer utilities {
+  /* Background utilities */
+  .bg-ohif-primary { background-color: hsl(var(--ohif-primary)); }
+  .bg-ohif-secondary { background-color: hsl(var(--ohif-secondary)); }
+  .bg-ohif-background { background-color: hsl(var(--ohif-background)); }
+  .bg-ohif-card { background-color: hsl(var(--ohif-card)); }
+  .bg-ohif-muted { background-color: hsl(var(--ohif-muted)); }
+  .bg-ohif-viewport { background-color: hsl(var(--ohif-viewport-bg)); }
+  .bg-ohif-toolbar { background-color: hsl(var(--ohif-toolbar-bg)); }
+  .bg-ohif-panel { background-color: hsl(var(--ohif-panel-bg)); }
+  .bg-ohif-selected-series { background-color: hsl(var(--ohif-selected-series-bg)); }
+  .border-ohif-selected-series { border-color: hsl(var(--ohif-selected-series-border)); }
+
+  /* Text utilities */
+  .text-ohif-primary { color: hsl(var(--ohif-primary)); }
+  .text-ohif-secondary { color: hsl(var(--ohif-secondary)); }
+  .text-ohif-foreground { color: hsl(var(--ohif-foreground)); }
+  .text-ohif-muted { color: hsl(var(--ohif-muted-foreground)); }
+  .text-ohif-success { color: hsl(var(--ohif-success)); }
+  .text-ohif-warning { color: hsl(var(--ohif-warning)); }
+  .text-ohif-error { color: hsl(var(--ohif-error)); }
+  .text-ohif-info { color: hsl(var(--ohif-info)); }
+
+  /* Border utilities */
+  .border-ohif-primary { border-color: hsl(var(--ohif-primary)); }
+  .border-ohif-secondary { border-color: hsl(var(--ohif-secondary)); }
+  .border-ohif-border { border-color: hsl(var(--ohif-border)); }
+  .border-ohif-light { border-color: hsl(var(--ohif-border-light)); }
+  .border-ohif-dark { border-color: hsl(var(--ohif-border-dark)); }
+
+  /* Hover states */
+  .hover\:bg-ohif-primary:hover { background-color: hsl(var(--ohif-primary-dark)); }
+  .hover\:bg-ohif-secondary:hover { background-color: hsl(var(--ohif-secondary-dark)); }
+  .hover\:text-ohif-primary:hover { color: hsl(var(--ohif-primary-light)); }
+}
+
+/* ================================
+ * COMPONENT SPECIFIC OVERRIDES
+ * ================================ */
+
+/* Force dark theme on body */
+body {
+  background-color: hsl(var(--ohif-background)) !important;
+  color: hsl(var(--ohif-foreground)) !important;
+}
+
+/* Viewport specific styling */
+.viewport-container {
+  background-color: hsl(var(--ohif-viewport-bg)) !important;
+}
+
+/* Toolbar styling */
+.toolbar, .ohif-toolbar {
+  background-color: hsl(var(--ohif-toolbar-bg)) !important;
+  border-color: hsl(var(--ohif-border)) !important;
+}
+
+/* Panel styling */
+.panel, .ohif-panel, .side-panel {
+  background-color: hsl(var(--ohif-panel-bg)) !important;
+  border-color: hsl(var(--ohif-border)) !important;
+}
+
+/* Button styling */
+.btn-primary, .button-primary {
+  background-color: hsl(var(--ohif-primary)) !important;
+  color: hsl(var(--ohif-primary-foreground)) !important;
+}
+
+.btn-primary:hover, .button-primary:hover {
+  background-color: hsl(var(--ohif-primary-dark)) !important;
+}
+
+.btn-secondary, .button-secondary {
+  background-color: hsl(var(--ohif-secondary)) !important;
+  color: hsl(var(--ohif-secondary-foreground)) !important;
+}
+
+/* Input styling */
+input, select, textarea {
+  background-color: hsl(var(--ohif-input)) !important;
+  border-color: hsl(var(--ohif-input-border)) !important;
+  color: hsl(var(--ohif-foreground)) !important;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: hsl(var(--ohif-primary)) !important;
+  box-shadow: 0 0 0 2px hsl(var(--ohif-ring) / 0.2) !important;
+}

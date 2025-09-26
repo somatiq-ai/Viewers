@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { useResizeDetector } from 'react-resize-detector';
 import * as cs3DTools from '@cornerstonejs/tools';
 import { Enums, eventTarget, getEnabledElement } from '@cornerstonejs/core';
-import { MeasurementService } from '@ohif/core';
+import { MeasurementService, useViewportRef } from '@ohif/core';
 import { AllInOneMenu } from '@ohif/ui-next';
 import { useViewportDialog } from '@ohif/ui-next';
 import type { Types as csTypes } from '@cornerstonejs/core';
@@ -159,7 +159,7 @@ const OHIFCornerstoneViewport = React.memo(
 
         segmentationService.clearSegmentationRepresentations(viewportId);
 
-        viewportActionCornersService.clear(viewportId);
+        viewportActionCornersService?.clear?.(viewportId);
       },
       [
         viewportId,
@@ -336,7 +336,7 @@ const OHIFCornerstoneViewport = React.memo(
       }
 
       const { unsubscribe } = measurementService.subscribe(
-        MeasurementService.EVENTS.JUMP_TO_MEASUREMENT_VIEWPORT,
+        MeasurementService.EVENTS.JUMP_TO_MEASUREMENT,
         event => handleJumpToMeasurement(event, elementRef, viewportId, cornerstoneViewportService)
       );
 
@@ -354,25 +354,25 @@ const OHIFCornerstoneViewport = React.memo(
         'viewportActionMenu.segmentationOverlay'
       );
 
-      if (windowLevelActionMenu?.enabled) {
-        viewportActionCornersService.addComponent({
-          viewportId,
-          id: 'windowLevelActionMenu',
-          component: getWindowLevelActionMenu({
-            viewportId,
-            element: elementRef.current,
-            displaySets,
-            servicesManager,
-            commandsManager,
-            location: windowLevelActionMenu.location,
-            verticalDirection: AllInOneMenu.VerticalDirection.TopToBottom,
-            horizontalDirection: AllInOneMenu.HorizontalDirection.RightToLeft,
-          }),
-          location: windowLevelActionMenu.location,
-        });
-      }
+      // if (windowLevelActionMenu?.enabled && viewportActionCornersService) {
+      //   viewportActionCornersService.addComponent({
+      //     viewportId,
+      //     id: 'windowLevelActionMenu',
+      //     component: getWindowLevelActionMenu({
+      //       viewportId,
+      //       element: elementRef.current,
+      //       displaySets,
+      //       servicesManager,
+      //       commandsManager,
+      //       location: windowLevelActionMenu.location,
+      //       verticalDirection: AllInOneMenu.VerticalDirection.TopToBottom,
+      //       horizontalDirection: AllInOneMenu.HorizontalDirection.RightToLeft,
+      //     }),
+      //     location: windowLevelActionMenu.location,
+      //   });
+      // }
 
-      if (segmentationOverlay?.enabled) {
+      if (segmentationOverlay?.enabled && viewportActionCornersService) {
         viewportActionCornersService.addComponent({
           viewportId,
           id: 'segmentation',
@@ -388,8 +388,8 @@ const OHIFCornerstoneViewport = React.memo(
         });
       }
 
-      // Add clear measurements button to top-right corner of every viewport (before close button)
-      viewportActionCornersService.addComponent({
+      // Add clear measurements button to top-right corner of every viewport
+      viewportActionCornersService?.addComponent?.({
         viewportId,
         id: 'viewportClearMeasurementsButton',
         component: <ViewportClearMeasurementsButton viewportId={viewportId} />,
@@ -398,7 +398,7 @@ const OHIFCornerstoneViewport = React.memo(
       });
 
       // Add close button to top-right corner of every viewport
-      viewportActionCornersService.addComponent({
+      viewportActionCornersService?.addComponent?.({
         viewportId,
         id: 'viewportCloseButton',
         component: <ViewportCloseButton viewportId={viewportId} />,

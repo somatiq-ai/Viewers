@@ -31,7 +31,7 @@ function ViewportClearMeasurementsButton({ viewportId }: ViewportClearMeasuremen
 
   return (
     <button
-      className="bg-transparent rounded px-2 py-1 text-white text-xs"
+      className="bg-transparent rounded px-1 py-2 text-white text-xs"
       onClick={handleClearMeasurements}
       title="Clear Measurements in this Viewport"
       data-cy="clear-measurements-btn"

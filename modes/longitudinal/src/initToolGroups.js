@@ -241,6 +241,9 @@ function initMPRToolGroup(extensionManager, toolGroupService, commandsManager) {
         },
       },
     ],
+    enabled: [
+      { toolName: toolNames.ReferenceLines },
+    ],
     disabled: [
       {
         toolName: toolNames.Crosshairs,
@@ -251,7 +254,13 @@ function initMPRToolGroup(extensionManager, toolGroupService, commandsManager) {
             xOffset: 0.95,
             yOffset: 0.05,
           },
-          disableOnPassive: true,
+          handleRadius:7,
+          mobile: {
+            enabled: true, //window.innerWidth < 768,
+            opacity: 0.4,
+            handleRadius: 7,
+          },
+          disableOnPassive: false,
           autoPan: {
             enabled: false,
             panSize: 10,
@@ -275,7 +284,6 @@ function initMPRToolGroup(extensionManager, toolGroupService, commandsManager) {
       {
         toolName: toolNames.AdvancedMagnify,
       },
-      { toolName: toolNames.ReferenceLines },
     ],
   };
 

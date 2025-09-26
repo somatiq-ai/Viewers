@@ -20,7 +20,7 @@ function ViewportCloseButton({ viewportId }: ViewportCloseButtonProps) {
       title="Close Viewport"
       data-cy="close-viewport-btn"
     >
-      <Icons.Close className="text-primary-active h-4 w-4" />
+      <Icons.Close className="text-primary-active h-10 w-10 " />
     </button>
   );
 }

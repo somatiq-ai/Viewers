@@ -453,7 +453,7 @@ const commandsModule = ({
         return actions.setHangingProtocol({
           protocolId,
           stageIndex,
-          reset: true,
+          reset: false,
         });
       }
     },
@@ -756,6 +756,100 @@ const commandsModule = ({
 
       setTimeout(() => actions.scrollActiveThumbnailIntoView(), 0);
     },
+
+    closeViewport: ({ viewportId }) => {
+      const { viewportGridService, hangingProtocolService } = servicesManager.services;
+      const { viewports, layout } = viewportGridService.getState();
+
+      if (!viewportId || !viewports.has(viewportId)) {
+        console.warn('Invalid viewport ID or viewport not found:', viewportId);
+        return;
+      }
+
+      // Check if we're currently in MPR mode
+      const activeProtocol = hangingProtocolService.getActiveProtocol();
+      if (activeProtocol?.protocol?.id === 'mpr' || activeProtocol?.protocol?.id === 'primaryAxiaMobile') {
+        // If MPR is enabled, toggle hanging protocol to exit MPR mode
+        console.log('MPR is active, toggling hanging protocol to exit MPR mode');
+        actions.toggleHangingProtocol({ protocolId: activeProtocol?.protocol?.id });
+        return;
+      }
+
+      // Don't allow closing if it's the last viewport, unless on mobile - then go to series page
+      if (viewports.size <= 1) {
+        // Check if we're on mobile
+        const isMobile = window.matchMedia('(max-width: 768px)').matches;
+        if (isMobile) {
+          // Navigate to series selection page on mobile
+          console.log('Closing last viewport on mobile - navigating to series page');
+          // Trigger the back to series functionality
+          window.dispatchEvent(new CustomEvent('ohif-mobile-back-to-series'));
+          return;
+        }
+        console.warn('Cannot close the last remaining viewport');
+        return;
+      }
+
+      // Create a new layout with one less viewport
+      const currentViewports = Array.from(viewports.values());
+      const remainingViewports = currentViewports.filter(vp => (vp as any).viewportOptions?.viewportId !== viewportId);
+
+      // Calculate new grid dimensions
+      const remainingCount = remainingViewports.length;
+      let newRows, newCols;
+
+      console.log('remainingCount <<< >>', remainingCount);
+
+      // Smart layout logic based on remaining viewport count
+      if (remainingCount <= 1) {
+        newRows = 1;
+        newCols = 1;
+      } else if (remainingCount === 2) {
+        // For 2 viewports, arrange side by side (1 row, 2 columns)
+        newRows = 1;
+        newCols = 2;
+      } else if (remainingCount === 3) {
+        // For 3 viewports, arrange in a line (1 row, 3 columns) or triangular (2x2 with one empty)
+        newRows = 1;
+        newCols = 3;
+      } else if (remainingCount === 4) {
+        newRows = 2;
+        newCols = 2;
+      } else if (remainingCount <= 6) {
+        newRows = 2;
+        newCols = 3;
+      } else if (remainingCount <= 9) {
+        newRows = 3;
+        newCols = 3;
+      } else {
+        // For more than 9 viewports, maintain current layout
+        newRows = layout.numRows;
+        newCols = layout.numCols;
+      }
+
+      // Set new layout with reduced size
+      viewportGridService.setLayout({
+        numRows: newRows,
+        numCols: newCols,
+        layoutOptions: [],
+        findOrCreateViewport: (position, positionId) => {
+          // Return existing viewport at this position if available
+          if (position < remainingViewports.length) {
+            const viewport = remainingViewports[position] as any;
+            // Ensure the viewport has the correct position information
+            return {
+              ...viewport,
+              positionId,
+              viewportOptions: {
+                ...viewport.viewportOptions,
+                viewportId: viewport.viewportOptions?.viewportId,
+              }
+            };
+          }
+          return null;
+        },
+      });
+    },
   };
 
   const definitions = {
@@ -778,6 +872,7 @@ const commandsModule = ({
       options: { direction: -1 },
     },
     setViewportGridLayout: actions.setViewportGridLayout,
+    closeViewport: actions.closeViewport,
     toggleOneUp: actions.toggleOneUp,
     openDICOMTagViewer: actions.openDICOMTagViewer,
     updateViewportDisplaySet: actions.updateViewportDisplaySet,

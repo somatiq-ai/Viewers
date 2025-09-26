@@ -8,6 +8,8 @@ import { VolumeRenderingPresets } from './VolumeRenderingPresets';
 import { VolumeRenderingOptions } from './VolumeRenderingOptions';
 import { useViewportRendering } from '../../hooks/useViewportRendering';
 
+export const nonWLModalities = ['SR', 'SEG', 'SM', 'RTSTRUCT', 'RTPLAN', 'RTDOSE'];
+
 export type WindowLevelActionMenuProps = {
   viewportId: string;
   element?: HTMLElement;

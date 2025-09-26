@@ -81,6 +81,14 @@ export default async function init({
 
   initCornerstoneTools();
 
+  // Shim: ensure images have preScale object so downstream checks don't throw
+  eventTarget.addEventListener(EVENTS.IMAGE_LOADED, ({ detail }) => {
+    const image = detail?.image;
+    if (image && !image.preScale) {
+      image.preScale = { scaled: false } as any;
+    }
+  });
+
   Settings.getRuntimeSettings().set('useCursors', Boolean(appConfig.useCursors));
 
   const {

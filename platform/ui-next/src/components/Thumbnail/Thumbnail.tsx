@@ -86,17 +86,16 @@ const Thumbnail = ({
     return (
       <div
         className={classnames(
-          'flex h-full w-full flex-col items-center justify-center gap-[4px] px-[8px] py-[12px]',
-          isActive && 'bg-popover rounded'
+          'flex h-full w-full flex-col items-center justify-center gap-[4px] border border-ohif-border rounded-md ',
+          isActive && 'bg-ohif-selected-series rounded !border-ohif-selected-series'
         )}
       >
-        <div className="h-[150px] w-[180px]">
           <div className="relative">
             {imageSrc ? (
               <img
                 src={imageSrc}
                 alt={imageAltText}
-                className="h-[150px] w-[180px] rounded object-cover"
+                className="h-[150px] w-[200px]  rounded object-cover"
                 crossOrigin="anonymous"
               />
             ) : (
@@ -146,7 +145,6 @@ const Thumbnail = ({
                 onReject={onReject}
               />
             </div>
-          </div>
         </div>
         <div className="flex h-[60px] w-[180px] flex-col justify-start pt-[4px]">
           <Tooltip>

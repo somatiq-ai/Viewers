@@ -36,10 +36,13 @@ import toggleVOISliceSync from './utils/toggleVOISliceSync';
 import { usePositionPresentationStore, useSegmentationPresentationStore } from './stores';
 import { toolNames } from './initCornerstoneTools';
 import CornerstoneViewportDownloadForm from './utils/CornerstoneViewportDownloadForm';
+import USCaptureModal from './utils/USCaptureModal';
 import { updateSegmentBidirectionalStats } from './utils/updateSegmentationStats';
 import { generateSegmentationCSVReport } from './utils/generateSegmentationCSVReport';
 import { getUpdatedViewportsForSegmentation } from './utils/hydrationUtils';
 import { SegmentationRepresentations } from '@cornerstonejs/tools/enums';
+import { SpinnerContextMenu } from '@ohif/ui-next';
+import { findNearbyToolData } from './utils/findNearbyToolData';
 
 const { DefaultHistoryMemo } = csUtils.HistoryMemo;
 const toggleSyncFunctions = {
@@ -913,6 +916,14 @@ function commandsModule({
 
       toolGroupIds.forEach(toolGroupId => {
         actions.setToolActive({ toolName, toolGroupId });
+
+        // Disable reference lines whenever crosshairs are activated
+        if (toolName === 'Crosshairs') {
+          const toolGroup = toolGroupService.getToolGroup(toolGroupId);
+          if (toolGroup && toolGroup.hasTool('ReferenceLines')) {
+            toolGroup.setToolDisabled('ReferenceLines');
+          }
+        }
       });
     },
     setToolActive: ({ toolName, toolGroupId = null }) => {
@@ -964,18 +975,38 @@ function commandsModule({
         return;
       }
 
-      const { uiModalService } = servicesManager.services;
+      const { uiModalService, displaySetService } = servicesManager.services;
 
       if (uiModalService) {
-        uiModalService.show({
-          content: CornerstoneViewportDownloadForm,
-          title: 'Download High Quality Image',
-          contentProps: {
-            activeViewportId,
-            cornerstoneViewportService,
-          },
-          containerClassName: 'max-w-4xl p-4',
-        });
+        // Check if current study has US modality
+        const activeDisplaySets = displaySetService.getActiveDisplaySets();
+        const hasUSModality = activeDisplaySets.some((ds: any) =>
+          ds.Modality === 'US' ||
+          (ds.instances && ds.instances.some((instance: any) => instance.Modality === 'US'))
+        );
+
+        if (hasUSModality) {
+          // Show US capture modal with 2x4 grid layout
+          uiModalService.show({
+            content: USCaptureModal,
+            title: 'US Printer Layout',
+            contentProps: {
+              servicesManager,
+            },
+            containerClassName: 'max-w-5xl p-4',
+          });
+        } else {
+          // Show regular capture modal
+          uiModalService.show({
+            content: CornerstoneViewportDownloadForm,
+            title: 'Download High Quality Image',
+            contentProps: {
+              activeViewportId,
+              cornerstoneViewportService,
+            },
+            containerClassName: 'max-w-4xl p-4',
+          });
+        }
       }
     },
     /**
@@ -1867,6 +1898,212 @@ function commandsModule({
       tools.disabled = disabledTools;
       return tools;
     },
+
+      // Custom spinner context menu command
+      showSpinnerContextMenu: async (options: { x?: number; y?: number; event?: any } = {}) => {
+        const { viewportGridService, cornerstoneViewportService, displaySetService, uiDialogService } = servicesManager.services;
+      const activeViewportId = viewportGridService.getActiveViewportId();
+
+      // Derive mouse position from the Cornerstone event when available
+      let position = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+      const evt = (options as any)?.event;
+      if (evt?.detail?.currentPoints?.page) {
+        const page = evt.detail.currentPoints.page;
+        position = { x: page[0], y: page[1] } as any;
+      } else if (evt?.detail?.event) {
+        position = {
+          x: evt.detail.event.clientX,
+          y: evt.detail.event.clientY,
+        } as any;
+      } else if (typeof options.x === 'number' && typeof options.y === 'number') {
+        position = { x: options.x, y: options.y } as any;
+      }
+
+      let isMPRAvailable = false;
+      try {
+        const viewport = cornerstoneViewportService.getCornerstoneViewport(activeViewportId);
+        if (viewport) {
+          const displaySetUIDs = viewportGridService.getDisplaySetsUIDsForViewport(activeViewportId);
+          const displaySets = displaySetUIDs.map(displaySetService.getDisplaySetByUID);
+          isMPRAvailable = displaySets.every(displaySet => displaySet?.isReconstructable);
+        }
+      } catch (error) {
+        console.warn('Error evaluating MPR availability:', error);
+        isMPRAvailable = false;
+      }
+
+      // Define spinner menu items with their positions around the circle
+      const spinnerItems = [
+        // Basic Tools (Top Arc)
+        {
+          id: 'Length',
+          label: 'Length',
+          icon: 'tool-length',
+          angle: -90, // top
+          onClick: () => {
+            commandsManager.runCommand('setToolActive', { toolName: 'Length' });
+          },
+        },
+        {
+          id: 'WindowLevel',
+          label: 'Window/Level',
+          icon: 'tool-window-level',
+          angle: -45, // top-right
+          onClick: () => {
+            commandsManager.runCommand('setToolActive', { toolName: 'WindowLevel' });
+          },
+        },
+        {
+          id: 'Zoom',
+          label: 'Zoom',
+          icon: 'tool-zoom',
+          angle: 0, // right
+          onClick: () => {
+            commandsManager.runCommand('setToolActive', { toolName: 'Zoom' });
+          },
+        },
+        // MPR Group (Right Arc)
+        {
+          id: 'MPR',
+          label: 'MPR',
+          icon: 'icon-mpr',
+          angle: 45, // bottom-right
+          disabled: !isMPRAvailable,
+          onClick: () => {
+            if (isMPRAvailable) {
+              commandsManager.runCommand('cycleMPROnMobile');
+            }
+          },
+        },
+        {
+          id: 'Axial',
+          label: 'Axial',
+          icon: 'icon-axial',
+          angle: 90, // bottom
+          disabled: !isMPRAvailable,
+          onClick: () => {
+            if (isMPRAvailable) {
+              commandsManager.runCommand('setSelectedViewportOrientation', { orientation: 'axial' });
+            }
+          },
+        },
+        {
+          id: 'Coronal',
+          label: 'Coronal',
+          icon: 'icon-coronal',
+          angle: 135, // bottom-left
+          disabled: !isMPRAvailable,
+          onClick: () => {
+            if (isMPRAvailable) {
+              commandsManager.runCommand('setSelectedViewportOrientation', { orientation: 'coronal' });
+            }
+          },
+        },
+        {
+          id: 'Sagittal',
+          label: 'Sagittal',
+          icon: 'icon-sagittal',
+          angle: 180, // left
+          disabled: !isMPRAvailable,
+          onClick: () => {
+            if (isMPRAvailable) {
+              commandsManager.runCommand('setSelectedViewportOrientation', { orientation: 'sagittal' });
+            }
+          },
+        },
+        // Additional Tools (Left Arc)
+        {
+          id: 'Pan',
+          label: 'Pan',
+          icon: 'tool-move',
+          angle: -135, // top-left
+          onClick: () => {
+            commandsManager.runCommand('setToolActive', { toolName: 'Pan' });
+          },
+        },
+      ];
+
+        // Render spinner context menu using dialog service (no modal chrome)
+        uiDialogService.hide('spinner-context-menu');
+        uiDialogService.show({
+          id: 'spinner-context-menu',
+          showOverlay: false,
+          content: SpinnerContextMenu,
+          shouldCloseOnEsc: true,
+          shouldCloseOnOverlayClick: true,
+          unstyled: true,
+          contentProps: {
+            items: spinnerItems,
+            position,
+            onClose: () => {
+              uiDialogService.hide('spinner-context-menu');
+            },
+          },
+        });
+    },
+
+    // Set viewport orientation command
+    setSelectedViewportOrientation: ({ orientation }) => {
+      try {
+        // Use the hanging protocol service to switch to the desired orientation
+        commandsManager.runCommand('setHangingProtocol', { protocolId: orientation });
+      } catch (error) {
+        console.error('Error setting viewport orientation:', error);
+      }
+    },
+
+
+
+
+
+
+    // Mobile MPR cycling command - cycles through Axial -> Coronal -> Sagittal
+    cycleMPROnMobile: () => {
+      const isMobile = window.matchMedia('(max-width: 768px)').matches;
+      if (!isMobile) {
+        // For desktop, use regular MPR
+        commandsManager.runCommand('toggleHangingProtocol', { protocolId: 'primaryAxiaMobile' });
+        commandsManager.runCommand('setToolActiveToolbar', {
+          toolGroupIds: ['mpr', 'primaryAxiaMobile'],
+          toolName: 'Crosshairs',
+        });
+
+        return;
+      }
+
+      // Get current protocol to determine next orientation
+      const { hangingProtocolService } = servicesManager.services;
+      const currentProtocol = hangingProtocolService.getActiveProtocol();
+
+      let nextProtocolId;
+
+      console.log('currentProtocol <<< >>', currentProtocol);
+      // Determine next orientation based on current protocol
+      if (!currentProtocol?.protocol?.id || currentProtocol.protocol.id === 'primaryAxiaMobile' || currentProtocol.protocol.id === 'axial') {
+        // First click or currently in axial -> go to coronal
+        nextProtocolId = 'coronal';
+      } else if (currentProtocol.protocol.id === 'coronal') {
+        // Currently in coronal -> go to sagittal
+        nextProtocolId = 'sagittal';
+      } else if (currentProtocol.protocol.id === 'sagittal') {
+        // Currently in sagittal -> go back to axial
+        nextProtocolId = 'axial';
+      } else {
+        // Default to axial for any other protocol
+        nextProtocolId = 'axial';
+      }
+
+      // Apply the next protocol
+      commandsManager.runCommand('toggleHangingProtocol', { protocolId: nextProtocolId });
+
+      // Activate crosshairs tool for MPR
+      commandsManager.runCommand('setToolActiveToolbar', {
+        toolGroupIds: ['default'],
+        toolName: 'Crosshairs'
+      });
+
+
+    },
     toggleUseCenterSegmentIndex: ({ toggle }) => {
       let labelmapTools = getLabelmapTools({ toolGroupService });
       labelmapTools = labelmapTools.filter(tool => !tool.toolName.includes('Eraser'));
@@ -2055,6 +2292,51 @@ function commandsModule({
       // update the orientation in the viewport info
       const viewportInfo = cornerstoneViewportService.getViewportInfo(viewportId);
       viewportInfo.setOrientation(orientation);
+    },
+
+    /**
+     * Toggles crosshairs visibility when clicked
+     * Reference lines are always disabled when crosshairs are active
+     * Primarily used when user clicks on crosshairs in MPR mode
+     */
+    toggleCrosshairsAndReferenceLines: ({ event }) => {
+      // Check if we clicked on crosshairs tool
+      const nearbyToolData = findNearbyToolData(commandsManager, event);
+      if (!nearbyToolData || nearbyToolData.toolName !== 'Crosshairs') {
+        return; // Only handle crosshairs clicks
+      }
+
+      const { toolGroupService } = servicesManager.services;
+
+      // Get the active tool group (typically 'mpr' in MPR mode)
+      const activeViewportId = _getActiveViewportEnabledElement()?.viewport?.id;
+      if (!activeViewportId) {
+        return;
+      }
+
+      const toolGroup = toolGroupService.getToolGroupForViewport(activeViewportId);
+      if (!toolGroup) {
+        return;
+      }
+
+      // Check current state of crosshairs
+      const crosshairsState = toolGroup.getToolOptions('Crosshairs')?.mode;
+
+      // Toggle crosshairs, always keep reference lines disabled when crosshairs are active
+      if (crosshairsState === Enums.ToolModes.Active ||
+          crosshairsState === Enums.ToolModes.Passive) {
+        // Disable crosshairs and reference lines
+        toolGroup.setToolDisabled('Crosshairs');
+        toolGroup.setToolDisabled('ReferenceLines');
+      } else {
+        // Enable crosshairs but keep reference lines disabled
+        toolGroup.setToolActive('Crosshairs');
+        toolGroup.setToolDisabled('ReferenceLines');
+      }
+
+      // Render the viewport to show changes
+      const renderingEngine = cornerstoneViewportService.getRenderingEngine();
+      renderingEngine.render();
     },
     /**
      * Toggles the horizontal flip state of the viewport.
@@ -2482,6 +2764,10 @@ function commandsModule({
     toggleSegmentLabel: actions.toggleSegmentLabel,
     jumpToMeasurementViewport: actions.jumpToMeasurementViewport,
     initializeSegmentLabelTool: actions.initializeSegmentLabelTool,
+    toggleCrosshairsAndReferenceLines: actions.toggleCrosshairsAndReferenceLines,
+    showSpinnerContextMenu: actions.showSpinnerContextMenu,
+    cycleMPROnMobile: actions.cycleMPROnMobile,
+    setSelectedViewportOrientation: actions.setSelectedViewportOrientation,
   };
 
   return {

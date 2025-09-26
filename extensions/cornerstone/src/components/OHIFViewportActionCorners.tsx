@@ -1,22 +1,26 @@
 import React, { memo } from 'react';
-import { ViewportActionCorners, IconPresentationProvider, ToolButton } from '@ohif/ui-next';
+import {
+  ViewportActionCorners,
+  IconPresentationProvider,
+  ToolButton,
+  ViewportActionCornersLocations,
+} from '@ohif/ui-next';
 import { Toolbar } from '@ohif/extension-default/src/Toolbar/Toolbar';
 import { ButtonLocation } from '@ohif/core/src/services/ToolBarService/ToolbarService';
 import { useViewportHover } from '../hooks';
+import { useViewportActionCornersContext } from '../contextProviders/ViewportActionCornersProvider';
 
 export type OHIFViewportActionCornersProps = {
   viewportId: string;
 };
 
 function OHIFViewportActionCornersComponent({ viewportId }: OHIFViewportActionCornersProps) {
-  // Use the viewport hover hook to track if viewport is hovered or active
+  // Keep hook available for future behavior toggles, but do not hide by hover
   const { isHovered, isActive } = useViewportHover(viewportId);
+  const viewportCornersContext = useViewportActionCornersContext() as any;
+  const viewportActionCornersState = viewportCornersContext?.[0];
 
-  const shouldShowCorners = isHovered || isActive;
-
-  if (!shouldShowCorners) {
-    return null;
-  }
+  // Always render action corners, match ohif behavior
 
   return (
     <IconPresentationProvider
@@ -43,6 +47,11 @@ function OHIFViewportActionCornersComponent({ viewportId }: OHIFViewportActionCo
           />
         </ViewportActionCorners.TopMiddle>
         <ViewportActionCorners.TopRight>
+          {/* Render service-registered components (Clear Measurements button) */}
+          {viewportActionCornersState?.[viewportId]?.[ViewportActionCornersLocations.topRight]?.map(
+            item => <div key={item.id}>{item.component}</div>
+          )}
+          {/* Render toolbar buttons */}
           <Toolbar
             buttonSection="viewportActionMenu.topRight"
             viewportId={viewportId}

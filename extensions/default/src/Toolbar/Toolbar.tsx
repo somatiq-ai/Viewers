@@ -5,9 +5,10 @@ interface ToolbarProps {
   buttonSection?: string;
   viewportId?: string;
   location?: number;
+  allowedIds?: string[];
 }
 
-export function Toolbar({ buttonSection = 'primary', viewportId, location }: ToolbarProps) {
+export function Toolbar({ buttonSection = 'primary', viewportId, location, allowedIds }: ToolbarProps) {
   const {
     toolbarButtons,
     onInteraction,
@@ -24,9 +25,14 @@ export function Toolbar({ buttonSection = 'primary', viewportId, location }: Too
     return null;
   }
 
+  // Filter toolbar buttons if allowedIds is provided
+  const filteredButtons = allowedIds
+    ? toolbarButtons.filter(toolDef => allowedIds.includes(toolDef.id))
+    : toolbarButtons;
+
   return (
     <>
-      {toolbarButtons?.map(toolDef => {
+      {filteredButtons?.map(toolDef => {
         if (!toolDef) {
           return null;
         }

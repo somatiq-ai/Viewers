@@ -1,13 +1,11 @@
-import React, {
-  createContext,
-  useContext,
-  ReactNode,
-  useState,
-  useEffect,
-  useCallback,
-} from 'react';
+import React from 'react';
 import classNames from 'classnames';
+import PropTypes from 'prop-types';
 
+/**
+ * A small container that can render multiple "corner" items (like icons, status)
+ * in each corner of the viewport: top-left, top-right, bottom-left, bottom-right.
+ */
 export enum ViewportActionCornersLocations {
   topLeft,
   topRight,
@@ -56,126 +54,69 @@ const locationClasses = {
   ),
 };
 
-const ViewportActionCornersContext = createContext<{
-  registerCorner: (location: ViewportActionCornersLocations, children: ReactNode) => void;
-} | null>(null);
-
-function Container({ children }: { children: ReactNode }) {
-  const [corners, setCorners] = useState({
-    [ViewportActionCornersLocations.topLeft]: null,
-    [ViewportActionCornersLocations.topRight]: null,
-    [ViewportActionCornersLocations.bottomLeft]: null,
-    [ViewportActionCornersLocations.bottomRight]: null,
-    [ViewportActionCornersLocations.topMiddle]: null,
-    [ViewportActionCornersLocations.bottomMiddle]: null,
-    [ViewportActionCornersLocations.leftMiddle]: null,
-    [ViewportActionCornersLocations.rightMiddle]: null,
-  });
-
-  const registerCorner = useCallback(
-    (location: ViewportActionCornersLocations, children: ReactNode) => {
-      setCorners(prev => {
-        // Only update if the children are different to avoid unnecessary renders
-        if (prev[location] === children) {
-          return prev;
-        }
-        return {
-          ...prev,
-          [location]: children,
-        };
-      });
-    },
-    []
-  );
-
-  return (
-    <ViewportActionCornersContext.Provider value={{ registerCorner }}>
-      {children}
-      <div
-        className="pointer-events-none absolute h-full w-full select-none"
-        onDoubleClick={event => {
-          event.preventDefault();
-          event.stopPropagation();
-        }}
-      >
-        {Object.entries(corners).map(([location, children]) => {
-          if (!children) {
-            return null;
-          }
-          return (
-            <div
-              key={location}
-              className={locationClasses[location]}
-            >
-              {children}
-            </div>
-          );
-        })}
-      </div>
-    </ViewportActionCornersContext.Provider>
-  );
-}
-
-function Corner({
-  location,
-  children,
-}: {
-  location: ViewportActionCornersLocations;
-  children: ReactNode;
-}) {
-  const context = useContext(ViewportActionCornersContext);
-
-  if (!context) {
-    throw new Error('Corner component must be used within a ViewportActionCorners.Container');
+function ViewportActionCorners({ cornerComponents }) {
+  if (!cornerComponents) {
+    return null;
   }
 
-  useEffect(() => {
-    context.registerCorner(location, children);
-  }, [context, location, children]);
-
-  return null;
+  return (
+    <div
+      className="pointer-events-none absolute h-full w-full select-none z-10"
+      onDoubleClick={event => {
+        event.preventDefault();
+        event.stopPropagation();
+      }}
+    >
+      {Object.entries(cornerComponents).map(([location, locationArray]) => (
+        <div
+          key={location}
+          className={locationClasses[location]}
+        >
+          {locationArray.map(componentInfo => (
+            <div key={componentInfo.id}>{componentInfo.component}</div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
 }
 
-function TopLeft({ children }: { children: ReactNode }) {
-  return <Corner location={ViewportActionCornersLocations.topLeft}>{children}</Corner>;
-}
-
-function TopRight({ children }: { children: ReactNode }) {
-  return <Corner location={ViewportActionCornersLocations.topRight}>{children}</Corner>;
-}
-
-function BottomLeft({ children }: { children: ReactNode }) {
-  return <Corner location={ViewportActionCornersLocations.bottomLeft}>{children}</Corner>;
-}
-
-function BottomRight({ children }: { children: ReactNode }) {
-  return <Corner location={ViewportActionCornersLocations.bottomRight}>{children}</Corner>;
-}
-
-function TopMiddle({ children }: { children: ReactNode }) {
-  return <Corner location={ViewportActionCornersLocations.topMiddle}>{children}</Corner>;
-}
-
-function BottomMiddle({ children }: { children: ReactNode }) {
-  return <Corner location={ViewportActionCornersLocations.bottomMiddle}>{children}</Corner>;
-}
-
-function LeftMiddle({ children }: { children: ReactNode }) {
-  return <Corner location={ViewportActionCornersLocations.leftMiddle}>{children}</Corner>;
-}
-
-function RightMiddle({ children }: { children: ReactNode }) {
-  return <Corner location={ViewportActionCornersLocations.rightMiddle}>{children}</Corner>;
-}
-
-export const ViewportActionCorners = {
-  Container,
-  TopLeft,
-  TopRight,
-  BottomLeft,
-  BottomRight,
-  TopMiddle,
-  BottomMiddle,
-  LeftMiddle,
-  RightMiddle,
+ViewportActionCorners.propTypes = {
+  cornerComponents: PropTypes.object.isRequired,
 };
+
+// Keep the old API for backwards compatibility
+const Container = ({ children }) => (
+  <div className="pointer-events-none absolute h-full w-full select-none z-10">
+    {children}
+  </div>
+);
+
+const Corner = ({ location, children }) => (
+  <div className={locationClasses[location]}>
+    {children}
+  </div>
+);
+
+const TopLeft = ({ children }) => <Corner location={ViewportActionCornersLocations.topLeft}>{children}</Corner>;
+const TopRight = ({ children }) => <Corner location={ViewportActionCornersLocations.topRight}>{children}</Corner>;
+const BottomLeft = ({ children }) => <Corner location={ViewportActionCornersLocations.bottomLeft}>{children}</Corner>;
+const BottomRight = ({ children }) => <Corner location={ViewportActionCornersLocations.bottomRight}>{children}</Corner>;
+const TopMiddle = ({ children }) => <Corner location={ViewportActionCornersLocations.topMiddle}>{children}</Corner>;
+const BottomMiddle = ({ children }) => <Corner location={ViewportActionCornersLocations.bottomMiddle}>{children}</Corner>;
+const LeftMiddle = ({ children }) => <Corner location={ViewportActionCornersLocations.leftMiddle}>{children}</Corner>;
+const RightMiddle = ({ children }) => <Corner location={ViewportActionCornersLocations.rightMiddle}>{children}</Corner>;
+
+// Export both the new and old API
+export { ViewportActionCorners };
+
+// Old API for backwards compatibility
+ViewportActionCorners.Container = Container;
+ViewportActionCorners.TopLeft = TopLeft;
+ViewportActionCorners.TopRight = TopRight;
+ViewportActionCorners.BottomLeft = BottomLeft;
+ViewportActionCorners.BottomRight = BottomRight;
+ViewportActionCorners.TopMiddle = TopMiddle;
+ViewportActionCorners.BottomMiddle = BottomMiddle;
+ViewportActionCorners.LeftMiddle = LeftMiddle;
+ViewportActionCorners.RightMiddle = RightMiddle;

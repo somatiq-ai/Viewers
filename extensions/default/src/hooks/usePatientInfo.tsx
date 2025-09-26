@@ -31,7 +31,7 @@ function usePatientInfo() {
   };
 
   const updatePatientInfo = ({ displaySetsAdded }) => {
-    if (!displaySetsAdded.length) {
+    if (!displaySetsAdded?.length) {
       return;
     }
     const displaySet = displaySetsAdded[0];
@@ -49,12 +49,50 @@ function usePatientInfo() {
     checkMixedPatients(instance.PatientID || null);
   };
 
+  // Populate patient info from the currently active display sets (used on first load and mobile)
+  const refreshFromActiveDisplaySets = () => {
+    const displaySets = displaySetService.getActiveDisplaySets();
+    if (!displaySets?.length) {
+      return;
+    }
+    const displaySet = displaySets[0];
+    const instance = displaySet?.instances?.[0] || displaySet?.instance;
+    if (!instance) {
+      return;
+    }
+    setPatientInfo({
+      PatientID: instance.PatientID || null,
+      PatientName: instance.PatientName ? formatPN(instance.PatientName) : null,
+      PatientSex: instance.PatientSex || null,
+      PatientDOB: formatDate(instance.PatientBirthDate) || null,
+    });
+    checkMixedPatients(instance.PatientID || null);
+  };
+
   useEffect(() => {
-    const subscription = displaySetService.subscribe(
+    // Initial populate for cases where the event already fired before mount (common on mobile)
+    refreshFromActiveDisplaySets();
+
+    const subAdded = displaySetService.subscribe(
       displaySetService.EVENTS.DISPLAY_SETS_ADDED,
       props => updatePatientInfo(props)
     );
-    return () => subscription.unsubscribe();
+
+    const subChanged = displaySetService.subscribe(
+      displaySetService.EVENTS.DISPLAY_SETS_CHANGED,
+      () => refreshFromActiveDisplaySets()
+    );
+
+    const subMetadataInvalidated = displaySetService.subscribe(
+      displaySetService.EVENTS.DISPLAY_SET_SERIES_METADATA_INVALIDATED,
+      () => refreshFromActiveDisplaySets()
+    );
+
+    return () => {
+      subAdded.unsubscribe();
+      subChanged.unsubscribe();
+      subMetadataInvalidated.unsubscribe();
+    };
   }, []);
 
   return { patientInfo, isMixedPatients };

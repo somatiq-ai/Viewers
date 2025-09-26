@@ -52,23 +52,13 @@ function ViewerHeader({
 
   const AboutModal = customizationService.getCustomization(
     'ohif.aboutModal'
-  ) as Types.MenuComponentCustomization;
+  ) as any;
 
   const UserPreferencesModal = customizationService.getCustomization(
     'ohif.userPreferencesModal'
-  ) as Types.MenuComponentCustomization;
+  ) as any;
 
-  const menuOptions = [
-    {
-      title: AboutModal?.menuTitle ?? t('Header:About'),
-      icon: 'info',
-      onClick: () =>
-        show({
-          content: AboutModal,
-          title: AboutModal?.title ?? t('AboutModal:About OHIF Viewer'),
-          containerClassName: AboutModal?.containerClassName ?? 'max-w-md',
-        }),
-    },
+  const menuOption =
     {
       title: UserPreferencesModal.menuTitle ?? t('Header:Preferences'),
       icon: 'settings',
@@ -79,8 +69,7 @@ function ViewerHeader({
           containerClassName:
             UserPreferencesModal?.containerClassName ?? 'flex max-w-4xl p-6 flex-col',
         }),
-    },
-  ];
+    };
 
   if (appConfig.oidc) {
     menuOptions.push({
@@ -94,7 +83,7 @@ function ViewerHeader({
 
   return (
     <Header
-      menuOptions={menuOptions}
+      menuOption={menuOption}
       isReturnEnabled={!!appConfig.showStudyList}
       onClickReturnButton={onClickReturnButton}
       isMobile={isMobile}
@@ -102,7 +91,6 @@ function ViewerHeader({
       Secondary={
         hideToolbars ? undefined : (
           <Toolbar
-            servicesManager={servicesManager}
             buttonSection="secondary"
           />
         )
@@ -142,13 +130,12 @@ function ViewerHeader({
         )
       }
       UndoRedo={
-        <div className="text-primary flex cursor-pointer items-center">
+        <div className="h-10 ml-2 bg-muted border border-ohif-dark rounded-xl text-primary flex cursor-pointer items-center">
           {isMobile ? (
             <>
 
-              <div className="mr-2 flex items-center">
+              <div className="mr-2 pl-2 flex items-center">
                 <HeaderPatientInfo
-                  servicesManager={servicesManager}
                   appConfig={appConfig}
                 />
               </div>
@@ -203,8 +190,8 @@ function ViewerHeader({
     >
 
       {hideToolbars ? null : (
-        <div className="relative flex justify-center gap-[4px]">
-          <Toolbar servicesManager={servicesManager} />
+        <div className="relative flex justify-center gap-[4px] ">
+          <Toolbar />
         </div>
       )}
     </Header>

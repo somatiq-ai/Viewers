@@ -1,45 +1,46 @@
 /* Scrollbar container */
 .scrollbarContainer {
+  background-color: transparent;
   position: absolute;
   right: 0;
   top: 0;
   height: 100%;
-  padding: 5px 5px 0 5px;
-  z-index: 10;
+  padding: 5px 0px 0px 0px; /* Increased right padding from 5px to 8px for better spacing */
+  z-index: 0;
 }
 
 .scrollbarInner {
   position: relative;
   height: 100%;
-  width: 11px;
+  width: 20px; /* Increased from 11px to 20px for wider scrollbar */
 }
 
 /* Apply these styles to any range input inside our component */
 .scrollbarInput {
   position: absolute;
-  left: 12px;
+  left: 10px; /* Adjusted from 12px to 16px to center in wider container */
   top: 0;
-  height: 12px;
+  height: 16px; /* Increased from 12px to 20px - this controls visual width due to rotation */
   transform: rotate(90deg);
   transform-origin: top left;
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
-  background-color: transparent;
+  background-color: transparent !important;
   padding: 0;
 }
 
 /* Thumb styles for WebKit browsers - more specific selector */
 input[type='range'].scrollbarInput::-webkit-slider-thumb {
   -webkit-appearance: none !important;
-  background-color: hsl(var(--neutral));
+  background-color:  hsl(var(--neutral));
   opacity: 50%;
   border: none;
   border-radius: 57px;
   cursor: -webkit-grab;
-  height: 8px;
-  margin-top: -4px;
-  width: 32px;
+  height: 12px; /* Increased from 8px to 12px - this controls visual width of thumb */
+  margin-top: -6px; /* Adjusted from -4px to -6px to center the wider thumb */
+  width: 40px; /* Increased from 32px to 40px for wider thumb */
 }
 
 input[type='range'].scrollbarInput::-webkit-slider-thumb:active,
@@ -56,8 +57,8 @@ input[type='range'].scrollbarInput::-moz-range-thumb {
   border: none;
   border-radius: 57px;
   cursor: -moz-grab;
-  height: 12px;
-  width: 39px;
+  height: 16px; /* Increased from 12px to 16px - this controls visual width of thumb in Firefox */
+  width: 47px; /* Increased from 39px to 47px for wider thumb in Firefox */
 }
 
 input[type='range'].scrollbarInput::-moz-range-thumb:active,
@@ -72,7 +73,7 @@ input[type='range'].scrollbarInput::-webkit-slider-runnable-track {
   background-color: transparent;
   border: none;
   cursor: pointer;
-  height: 5px;
+  height: 8px; /* Increased from 5px to 8px for wider track */
 }
 
 /* Track styles for Firefox - more specific selector */
@@ -80,7 +81,7 @@ input[type='range'].scrollbarInput::-moz-range-track {
   background-color: transparent;
   border: none;
   cursor: pointer;
-  height: 2px;
+  height: 4px; /* Increased from 2px to 4px for wider track in Firefox */
 }
 
 /* Ensure focus doesn't show an outline */

@@ -1,4 +1,4 @@
-import type { Button } from '@ohif/core/types';
+// Removed Button type import to avoid linter module resolution issues
 
 import { EVENTS } from '@cornerstonejs/core';
 import { ViewportGridService } from '@ohif/core';
@@ -19,20 +19,22 @@ export const setToolActiveToolbar = {
   },
 };
 
-const toolbarButtons: Button[] = [
+const toolbarButtons = [
   // sections
   {
     id: 'MeasurementTools',
     uiType: 'ohif.toolButtonList',
     props: {
-      buttonSection: true,
+      buttonSection: 'measurementSection',
+      groupId: 'MeasurementTools',
     },
   },
   {
     id: 'MoreTools',
     uiType: 'ohif.toolButtonList',
     props: {
-      buttonSection: true,
+      buttonSection: 'moreToolsSection',
+      groupId: 'MoreTools',
     },
   },
   {
@@ -636,6 +638,34 @@ const toolbarButtons: Button[] = [
     },
   },
   {
+    id: 'TwoPanel',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'layout-common-1x2',
+      label: 'Two Panel',
+      tooltip: 'Two Panel Layout (1x2)',
+      commands: {
+        commandName: 'setViewportGridLayout',
+        commandOptions: {
+          numRows: window.innerWidth < 768 ? 2 : 1,
+          numCols: window.innerWidth < 768 ? 1 : 2,
+        },
+      },
+      evaluate: 'evaluate.action',
+    },
+  },
+  {
+    id: 'MPR',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'icon-mpr',
+      label: 'MPR',
+      tooltip: 'MPR - Click to cycle: Axial → Coronal → Sagittal',
+      commands: 'cycleMPROnMobile',
+      evaluate: 'evaluate.displaySetIsReconstructable',
+    },
+  },
+  {
     id: 'Crosshairs',
     uiType: 'ohif.toolButton',
     props: {
@@ -644,14 +674,88 @@ const toolbarButtons: Button[] = [
       label: 'Crosshairs',
       commands: {
         commandName: 'setToolActiveToolbar',
-        commandOptions: {
-          toolGroupIds: ['mpr'],
-        },
+          commandOptions: {
+            toolGroupIds: ['mpr', 'primaryAxiaMobile'],
+          },
       },
       evaluate: {
         name: 'evaluate.cornerstoneTool',
         disabledText: 'Select an MPR viewport to enable this tool',
       },
+    },
+  },
+  {
+    id: 'Sagittal',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'icon-sagittal',
+      label: 'Sagittal',
+      tooltip: 'Sagittal View',
+      commands: [
+        {
+          commandName: 'setSelectedViewportOrientation',
+          commandOptions: {
+            orientation: 'sagittal',
+          },
+        },
+      ],
+      evaluate: 'evaluate.displaySetIsReconstructable',
+    },
+  },
+  {
+    id: 'Coronal',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'icon-coronal',
+      label: 'Coronal',
+      tooltip: 'Coronal View',
+      commands: [
+        {
+          commandName: 'setSelectedViewportOrientation',
+          commandOptions: {
+            orientation: 'coronal',
+          },
+        },
+      ],
+      evaluate: 'evaluate.displaySetIsReconstructable',
+    },
+  },
+  {
+    id: 'Axial',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'icon-axial',
+      label: 'Axial',
+      tooltip: 'Axial View',
+      commands: [
+        {
+          commandName: 'setSelectedViewportOrientation',
+          commandOptions: {
+            orientation: 'axial',
+          },
+        },
+      ],
+      evaluate: 'evaluate.displaySetIsReconstructable'
+    },
+  },
+  {
+    id: '3D',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'icon-3d-rotate',
+      label: '3D',
+      tooltip: '3D Volume Rendering',
+      commands: [
+        {
+          commandName: 'setViewportGridLayout',
+          commandOptions: {
+            numRows: 1,
+            numCols: 1,
+            viewports: [{ namespace: '@ohif/extension-cornerstone.viewportModule.cornerstone' }],
+          },
+        },
+      ],
+      evaluate: 'evaluate.displaySetIsReconstructable',
     },
   },
   // Section containers for the nested toolbox

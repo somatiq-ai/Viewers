@@ -29,10 +29,10 @@ module.exports = {
       },
 
       primary: {
-        light: '#5acce6',
-        main: '#0944b3',
-        dark: '#090c29',
-        active: '#348cfd',
+        light: 'hsl(var(--ohif-primary-light))',
+        main: 'hsl(var(--ohif-primary))',
+        dark: 'hsl(var(--ohif-primary-dark))',
+        active: 'hsl(var(--ohif-primary))',
       },
       inputfield: {
         main: '#3a3f99',
@@ -42,10 +42,10 @@ module.exports = {
       },
 
       secondary: {
-        light: '#3a3f99',
-        main: '#2b166b',
-        dark: '#041c4a',
-        active: '#1f1f27',
+        light: 'hsl(var(--ohif-secondary-light))',
+        main: 'hsl(var(--ohif-secondary))',
+        dark: 'hsl(var(--ohif-secondary-dark))',
+        active: 'hsl(var(--ohif-secondary))',
       },
 
       indigo: {
@@ -60,16 +60,16 @@ module.exports = {
         active: '#2c3074',
       },
       bkg: {
-        low: '#050615',
-        med: '#090C29',
-        full: '#041C4A',
+        low: 'hsl(var(--ohif-background-darker))',
+        med: 'hsl(var(--ohif-background))',
+        full: 'hsl(var(--ohif-background-lighter))',
       },
       info: {
         primary: '#FFFFFF',
         secondary: '#7BB2CE',
       },
       actions: {
-        primary: '#348CFD',
+        primary: '',
         highlight: '#5ACCE6',
         hover: 'rgba(52, 140, 253, 0.2)',
       },

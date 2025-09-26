@@ -8,15 +8,20 @@ import { useAppConfig } from '@state';
 
 function ViewerViewportGrid(props: withAppTypes) {
   const { servicesManager, viewportComponents = [], dataSource, commandsManager } = props;
-  const [viewportGrid, viewportGridService] = useViewportGrid();
+const [viewportGrid, viewportGridService] = useViewportGrid();
   const [appConfig] = useAppConfig();
 
   const { layout, activeViewportId, viewports, isHangingProtocolLayout } = viewportGrid;
   const { numCols, numRows } = layout;
   const layoutHash = useRef(null);
 
-  const { displaySetService, hangingProtocolService, uiNotificationService, customizationService } =
-    servicesManager.services;
+  const {
+    displaySetService,
+    hangingProtocolService,
+    uiNotificationService,
+    customizationService,
+    measurementService,
+  } = servicesManager.services;
 
   const generateLayoutHash = () => `${numCols}-${numRows}`;
 
@@ -152,12 +157,9 @@ function ViewerViewportGrid(props: withAppTypes) {
 
   useEffect(() => {
     const { unsubscribe } = measurementService.subscribe(
-      MeasurementService.EVENTS.JUMP_TO_MEASUREMENT_LAYOUT,
-      event => {
-        const { viewportId, measurement, isConsumed } = event;
-        if (isConsumed) {
-          return;
-        }
+      MeasurementService.EVENTS.JUMP_TO_MEASUREMENT,
+      (event: any) => {
+        const { viewportId, measurement } = event || {};
 
         const { displaySetInstanceUID: referencedDisplaySetInstanceUID } = measurement;
         const { viewports } = viewportGridService.getState();
@@ -207,6 +209,7 @@ function ViewerViewportGrid(props: withAppTypes) {
 
         // Find the viewport that can display the measurement
         const viewport = updatedViewports.find(viewport => {
+          
           const gridViewport = viewportGridService.getViewportState(viewport.viewportId);
           return gridViewport.isReferenceViewable?.({
             viewportId: viewport.viewportId,
@@ -232,8 +235,6 @@ function ViewerViewportGrid(props: withAppTypes) {
             ...measurement.metadata,
           },
         });
-
-        event.consume();
 
         commandsManager.run('setDisplaySetsForViewports', { viewportsToUpdate: updatedViewports });
       }
@@ -273,8 +274,20 @@ function ViewerViewportGrid(props: withAppTypes) {
     const updates = viewportsToUpdate.current;
     if (updates.size > 0) {
       updates.forEach((isReferenceViewable, viewportId) => {
-        viewportGridService.setIsReferenceViewable(viewportId, isReferenceViewable);
-        prevReferenceViewableMap.current.set(viewportId, isReferenceViewable);
+        // Write through provider API if available; otherwise, store on viewportOptions
+        if (typeof viewportGridService.isReferenceViewable === 'function') {
+          prevReferenceViewableMap.current.set(viewportId, isReferenceViewable);
+        } else {
+          const state = viewportGridService.getState();
+          const viewport = state.viewports.get(viewportId);
+          if (viewport) {
+            viewport.viewportOptions = {
+              ...viewport.viewportOptions,
+              isReferenceViewable,
+            } as any;
+            prevReferenceViewableMap.current.set(viewportId, isReferenceViewable);
+          }
+        }
       });
       viewportsToUpdate.current.clear();
     }
@@ -311,7 +324,7 @@ function ViewerViewportGrid(props: withAppTypes) {
           return !displaySet?.unsupported;
         });
 
-      const { component: ViewportComponent } = _getViewportComponent(
+      const { component: ViewportComponent, isReferenceViewable } = _getViewportComponent(
         displaySets,
         viewportComponents,
         uiNotificationService
@@ -458,8 +471,8 @@ function _getViewportComponent(displaySets, viewportComponents, uiNotificationSe
       throw new Error('displaySetsToDisplay is null');
     }
     if (viewportComponents[i].displaySetsToDisplay.includes(SOPClassHandlerId)) {
-      const { component } = viewportComponents[i];
-      return { component };
+      const { component, isReferenceViewable } = viewportComponents[i];
+      return { component, isReferenceViewable };
     }
   }
 
@@ -470,7 +483,7 @@ function _getViewportComponent(displaySets, viewportComponents, uiNotificationSe
     type: 'error',
   });
 
-  return { component: EmptyViewport };
+  return { component: EmptyViewport, isReferenceViewable: () => false };
 }
 
 export default ViewerViewportGrid;

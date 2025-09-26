@@ -45,8 +45,6 @@ module.exports = {
       colors: {
         highlight: 'hsl(var(--highlight))',
         neutral: 'hsl(var(--neutral))',
-        'neutral-light': 'hsl(var(--neutral-light))',
-        'neutral-dark': 'hsl(var(--neutral-dark))',
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
@@ -110,7 +108,7 @@ module.exports = {
         secondary: '#7BB2CE',
       },
       actions: {
-        primary: '#348CFD',
+        primary: '',
         highlight: '#5ACCE6',
         hover: 'rgba(52, 140, 253, 0.2)',
       },

@@ -4,14 +4,23 @@ import { useIconPresentation, Icons, Button } from '@ohif/ui-next';
 export default function ToolButtonWrapper(props) {
   const { IconContainer, containerProps } = useIconPresentation();
 
-  const Icon = <Icons.ByName name={props.icon} />;
+  const { id, icon, disabled, commands, onInteraction, ...rest } = props;
+  const Icon = <Icons.ByName name={icon} />;
+
+  const handleClick = () => {
+    if (disabled) {
+      return;
+    }
+    onInteraction?.({ itemId: id, commands });
+  };
 
   return (
     <div>
       {IconContainer ? (
         <IconContainer
-          disabled={props.disabled}
-          {...props}
+          disabled={disabled}
+          onClick={handleClick}
+          {...rest}
           {...containerProps}
         >
           {Icon}
@@ -20,7 +29,8 @@ export default function ToolButtonWrapper(props) {
         <Button
           variant="ghost"
           size="icon"
-          disabled={props.disabled}
+          disabled={disabled}
+          onClick={handleClick}
         >
           {Icon}
         </Button>

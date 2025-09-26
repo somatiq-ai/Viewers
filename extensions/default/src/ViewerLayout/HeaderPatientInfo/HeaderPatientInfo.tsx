@@ -16,12 +16,14 @@ const formatWithEllipsis = (str, maxLength) => {
   return str;
 };
 
-function HeaderPatientInfo({ servicesManager, appConfig }: withAppTypes) {
+function HeaderPatientInfo({  appConfig }: withAppTypes) {
+
+  console.log({appConfig});
   const initialExpandedState =
     appConfig.showPatientInfo === PatientInfoVisibility.VISIBLE ||
     appConfig.showPatientInfo === PatientInfoVisibility.VISIBLE_READONLY;
   const [expanded, setExpanded] = useState(initialExpandedState);
-  const { patientInfo, isMixedPatients } = usePatientInfo(servicesManager);
+  const { patientInfo, isMixedPatients } = usePatientInfo();
 
   useEffect(() => {
     if (isMixedPatients && expanded) {
@@ -55,7 +57,7 @@ function HeaderPatientInfo({ servicesManager, appConfig }: withAppTypes) {
             <div className="self-start text-[14px] font-bold text-white">
               {formattedPatientName} {patientInfo.PatientAge}
             </div>
-            <div className="text-aqua-pale flex gap-2 text-[12px]">
+            <div className="text-muted-foreground flex gap-2 text-[12px]">
               <div>{formattedPatientID}</div>
               <div>{patientInfo.PatientSex}</div>
             </div>

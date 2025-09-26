@@ -4,7 +4,7 @@ const collapsedOutsideBorderSize = 4;
 const collapsedWidth = 25;
 
 const rightPanelInitialExpandedWidth = 280;
-const leftPanelInitialExpandedWidth = 145;
+const leftPanelInitialExpandedWidth = 215;
 
 const panelGroupDefinition = {
   groupId: 'viewerLayoutResizablePanelGroup',

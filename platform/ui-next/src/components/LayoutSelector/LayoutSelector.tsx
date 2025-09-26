@@ -171,7 +171,7 @@ const Trigger = ({
         </TooltipTrigger>
         <TooltipContent side="bottom">
           {tooltip && <div>{tooltip}</div>}
-          {disabled && disabledText && <div className="text-muted-foreground">{disabledText}</div>}
+          {disabled && disabledText && <div className="text-primary">{disabledText}</div>}
         </TooltipContent>
       </Tooltip>
     );
@@ -212,7 +212,7 @@ type PresetSectionProps = {
 const PresetSection = ({ children, title, className }: PresetSectionProps) => {
   return (
     <div className={cn('flex flex-col gap-2', className)}>
-      <div className="text-muted-foreground text-xs">{title}</div>
+      <div className="text-primary text-xs">{title}</div>
       {React.Children.count(children) > 0 && (
         <div
           className={cn(title.toLowerCase() === 'common' ? 'flex gap-2' : 'flex flex-col gap-0')}
@@ -320,7 +320,7 @@ const GridSelector = ({ rows = 3, columns = 4, className }: GridSelectorProps) =
       {Array.from(Array(rows * columns).keys()).map(index => (
         <div
           key={index}
-          className={cn('cursor-pointer', isHovered(index) ? 'bg-primary-active' : 'bg-[#04225b]')}
+          className={cn('cursor-pointer', isHovered(index) ? 'bg-primary-active' : 'bg-background')}
           data-cy={`Layout-${index % columns}-${Math.floor(index / columns)}`}
           onClick={() => handleSelection(index)}
           onMouseEnter={() => setHoveredIndex(index)}
@@ -336,7 +336,7 @@ const Divider = ({ className }: { className?: string }) => (
 );
 
 const HelpText = ({ children, className }: { children: React.ReactNode; className?: string }) => (
-  <p className={cn('text-muted-foreground text-xs leading-tight', className)}>{children}</p>
+  <p className={cn('text-primary text-xs leading-tight', className)}>{children}</p>
 );
 
 // Assemble the compound component

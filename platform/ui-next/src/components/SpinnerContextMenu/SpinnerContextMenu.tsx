@@ -80,7 +80,7 @@ const SpinnerContextMenu: React.FC<SpinnerContextMenuProps> = ({
         }}
         onClick={onClose}
       >
-        <Icons.ByName name="close" className="w-4 h-4 text-white" />
+        <Icons.ByName name="close" className="w-6 h-6 text-white" />
       </div>
 
       {/* Menu items around the circle */}

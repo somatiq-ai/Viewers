@@ -244,7 +244,6 @@ function ViewerLayout({
                 <div className="h-[64px] pointer-events-auto fixed bottom-0 left-0 right-0 z-10 bg-black/80 backdrop-blur">
                   <div className="mx-auto flex max-w-[1000px] items-center justify-between px-3 py-2">
                     <Toolbar
-                      servicesManager={servicesManager}
                       buttonSection="primary"
                       allowedIds={[
                         'MeasurementTools',

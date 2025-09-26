@@ -18,11 +18,11 @@ import NavBar from '../NavBar';
 
 interface HeaderProps {
   children?: ReactNode;
-  menuOptions: Array<{
+  menuOption: {
     title: string;
     icon?: string;
     onClick: () => void;
-  }>;
+  };
   isReturnEnabled?: boolean;
   onClickReturnButton?: () => void;
   isSticky?: boolean;
@@ -38,7 +38,7 @@ interface HeaderProps {
 
 function Header({
   children,
-  menuOptions,
+  menuOption,
   isReturnEnabled = true,
   Logo,
   isMobile = false,
@@ -62,45 +62,21 @@ function Header({
           <div className="mr-3 inline-flex items-center"> {PatientInfo}</div>
         </div>
 
-        <div className="absolute right-0 top-1/2 flex -translate-y-1/2 select-none items-center">
-          <div className="flex items-center justify-center space-x-2">{children}</div>
+        <div className="absolute  right-0 top-1/2 flex -translate-y-1/2 select-none items-center">
+          <div className=" bg-muted border border-ohif-dark rounded-xl flex items-center justify-center space-x-2">{children}</div>
           {UndoRedo}
-          <div className="border-primary-dark mx-1.5 h-[25px] border-r"></div>
+          <div className="border-ohif-dark mx-1.5 h-[25px] border-r"></div>
           <div className="flex-shrink-0">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+
                 {!isMobile && (
                 <Button
                   variant="ghost"
                   size="icon"
                   className="text-primary hover:bg-primary-dark mt-2 h-full w-full"
                 >
-                  <Icons.GearSettings />
+                  <Icons.GearSettings onClick={menuOption.onClick}/>
                 </Button>
                 ) }
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {menuOptions.map((option, index) => {
-                  const IconComponent = option.icon
-                    ? Icons[option.icon as keyof typeof Icons]
-                    : null;
-                  return (
-                    <DropdownMenuItem
-                      key={index}
-                      onSelect={option.onClick}
-                      className="flex items-center gap-2 py-2"
-                    >
-                      {IconComponent && (
-                        <span className="flex h-4 w-4 items-center justify-center">
-                          <Icons.ByName name={IconComponent.toString()} />
-                        </span>
-                      )}
-                      <span className="flex-1">{option.title}</span>
-                    </DropdownMenuItem>
-                  );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </div>
       </div>

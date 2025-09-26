@@ -75,7 +75,8 @@ function PanelStudyBrowser({
 
   const mapDisplaySetsWithState = customMapDisplaySets || _mapDisplaySets;
 
-  const onDoubleClickThumbnailHandler = useCallback(
+  // Shared logic for opening series (used by both single-click on desktop and double-click on mobile)
+  const openSeriesHandler = useCallback(
     async displaySetInstanceUID => {
       const customHandler = customizationService.getCustomization(
         'studyBrowser.thumbnailDoubleClickCallback'
@@ -106,6 +107,32 @@ function PanelStudyBrowser({
       customizationService,
       onMobileOpenViewportGrid,
     ]
+  );
+
+  // Single-click handler for desktop
+  const onClickThumbnailHandler = useCallback(
+    async displaySetInstanceUID => {
+      // Check if it's a desktop device (not touch device)
+      const isDesktop = !('ontouchstart' in window) &&
+                       (!navigator.maxTouchPoints || navigator.maxTouchPoints === 0) &&
+                       window.innerWidth >= 768; // Additional screen size check
+
+      if (isDesktop) {
+        // On desktop, single-click opens the series
+        await openSeriesHandler(displaySetInstanceUID);
+      }
+      // On mobile/touch devices, single-click does nothing (double-tap will handle opening)
+    },
+    [openSeriesHandler]
+  );
+
+  // Double-click handler (mainly for mobile double-tap)
+  const onDoubleClickThumbnailHandler = useCallback(
+    async displaySetInstanceUID => {
+      // Always handle double-click/double-tap (for mobile and as fallback for desktop)
+      await openSeriesHandler(displaySetInstanceUID);
+    },
+    [openSeriesHandler]
   );
 
   // ~~ studyDisplayList
@@ -453,7 +480,7 @@ function PanelStudyBrowser({
           setActiveTabName(clickedTabName);
         }}
         onClickUntrack={onClickUntrack}
-        onClickThumbnail={() => {}}
+        onClickThumbnail={onClickThumbnailHandler}
         onDoubleClickThumbnail={onDoubleClickThumbnailHandler}
         activeDisplaySetInstanceUIDs={activeDisplaySetInstanceUIDs}
         showSettings={actionIcons.find(icon => icon.id === 'settings')?.value}

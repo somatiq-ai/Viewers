@@ -90,17 +90,62 @@ function modeFactory({ modeConfiguration }) {
       // Init Default and SR ToolGroups
       initToolGroups(extensionManager, toolGroupService, commandsManager);
 
-      toolbarService.register(toolbarButtons);
-      toolbarService.updateSection(toolbarService.sections.primary, [
+      toolbarService.addButtons(toolbarButtons as any);
+      toolbarService.createButtonSection('primary', [
         'MeasurementTools',
         'Zoom',
         'Pan',
-        'TrackballRotate',
         'WindowLevel',
+        'invert',
+        'ImageSliceSync',
+        'flipHorizontal',
         'Capture',
         'Layout',
-        'Crosshairs',
+        'TwoPanel',
+        'StackScroll',
+        'MPR',
+        'Axial',
+        'Coronal',
+        'Sagittal',
         'MoreTools',
+      ]);
+
+      toolbarService.createButtonSection('measurementSection', [
+        'Length',
+        'Bidirectional',
+        'ArrowAnnotate',
+        'EllipticalROI',
+        'RectangleROI',
+        'CircleROI',
+        'PlanarFreehandROI',
+        'SplineROI',
+        'LivewireContour',
+      ]);
+
+      toolbarService.createButtonSection('moreToolsSection', [
+        'Reset',
+        'Axial',
+        'Coronal',
+        'Sagittal',
+        'Crosshairs',
+        'rotate-right',
+        'flipHorizontal',
+        'ImageSliceSync',
+        'ReferenceLines',
+        'ImageOverlayViewer',
+        'TrackballRotate',
+        'invert',
+        'Probe',
+        'Cine',
+        'Angle',
+        'CobbAngle',
+        'Magnify',
+        'CalibrationLine',
+        'TagBrowser',
+        'AdvancedMagnify',
+        'UltrasoundDirectionalTool',
+        'WindowLevelRegion',
+        'Layout',
       ]);
 
       toolbarService.updateSection(toolbarService.sections.viewportActionMenu.topLeft, [
@@ -130,43 +175,19 @@ function modeFactory({ modeConfiguration }) {
         'windowLevelMenu',
       ]);
 
-      toolbarService.updateSection('MeasurementTools', [
-        'Length',
-        'Bidirectional',
-        'ArrowAnnotate',
-        'EllipticalROI',
-        'RectangleROI',
-        'CircleROI',
-        'PlanarFreehandROI',
-        'SplineROI',
-        'LivewireContour',
-      ]);
-
-      toolbarService.updateSection('MoreTools', [
-        'Reset',
-        'rotate-right',
-        'flipHorizontal',
-        'ImageSliceSync',
-        'ReferenceLines',
-        'ImageOverlayViewer',
-        'StackScroll',
-        'invert',
-        'Probe',
-        'Cine',
-        'Angle',
-        'CobbAngle',
-        'Magnify',
-        'CalibrationLine',
-        'TagBrowser',
-        'AdvancedMagnify',
-        'UltrasoundDirectionalTool',
-        'WindowLevelRegion',
-        'SegmentLabelTool',
-      ]);
-
       customizationService.setCustomizations({
         'panelSegmentation.disableEditing': {
           $set: true,
+        },
+        'ohif.hotkeyBindings': {
+          $push: [
+            {
+              commandName: 'showSpinnerContextMenu',
+              label: 'Show Spinner Menu',
+              keys: ['space'],
+              isEditable: true,
+            },
+          ],
         },
       });
 
@@ -242,26 +263,30 @@ function modeFactory({ modeConfiguration }) {
           //defaultViewerRouteInit
         },*/
         layoutTemplate: () => {
+          // Configuration option to enable/disable right panel
+          const enableRightPanel = false; // Set to true to re-enable right panel
+
           return {
             id: ohif.layout,
             props: {
               leftPanels: [tracked.thumbnailList],
               leftPanelResizable: true,
-              rightPanels: [cornerstone.segmentation, tracked.measurements],
+              rightPanels: enableRightPanel ? [cornerstone.segmentation, tracked.measurements] : [], // Disabled right panel
               rightPanelClosed: true,
-              rightPanelResizable: true,
+              rightPanelResizable: enableRightPanel,
               viewports: [
                 {
                   namespace: tracked.viewport,
                   displaySetsToDisplay: [
                     ohif.sopClassHandler,
                     dicomvideo.sopClassHandler,
+                    dicomsr.sopClassHandler3D,
                     ohif.wsiSopClassHandler,
                   ],
                 },
                 {
                   namespace: dicomsr.viewport,
-                  displaySetsToDisplay: [dicomsr.sopClassHandler, dicomsr.sopClassHandler3D],
+                  displaySetsToDisplay: [dicomsr.sopClassHandler],
                 },
                 {
                   namespace: dicompdf.viewport,
