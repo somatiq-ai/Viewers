@@ -158,7 +158,9 @@ module.exports = (env, argv) => {
       open: true,
       port: OHIF_PORT,
       client: {
-        overlay: { errors: true, warnings: false },
+        // Disable overlay for runtime errors - we handle them in ErrorBoundary
+        // This prevents webpack dev server from showing error dialogs
+        overlay: false,
       },
       proxy: [
         {

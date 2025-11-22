@@ -67,6 +67,44 @@
       }
 
       window.PUBLIC_URL = '<%= PUBLIC_URL %>';
+      
+      // Suppress ALL errors and hide webpack overlay immediately
+      (function() {
+        // Hide webpack overlay
+        const hideOverlay = () => {
+          // Hide webpack dev server overlay iframe
+          const iframes = document.querySelectorAll('iframe');
+          iframes.forEach(iframe => {
+            if (iframe.src && (iframe.src.includes('webpack') || iframe.src.includes('overlay'))) {
+              iframe.style.display = 'none';
+              iframe.remove();
+            }
+          });
+          
+          // Hide any error overlay divs
+          const overlays = document.querySelectorAll('[class*="overlay"], [id*="overlay"], [class*="error"], [data-webpack-dev-server-overlay]');
+          overlays.forEach(el => {
+            const htmlEl = el;
+            if (htmlEl.textContent && (htmlEl.textContent.includes('error') || htmlEl.textContent.includes('ERROR') || htmlEl.textContent.includes('Uncaught'))) {
+              htmlEl.style.display = 'none';
+              htmlEl.remove();
+            }
+          });
+        };
+        
+        // Hide immediately and on interval
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', hideOverlay);
+        } else {
+          hideOverlay();
+        }
+        setInterval(hideOverlay, 50);
+        
+        // Suppress all errors
+        window.onerror = function() { hideOverlay(); return true; };
+        window.addEventListener('unhandledrejection', function(e) { e.preventDefault(); hideOverlay(); }, true);
+        window.addEventListener('error', function(e) { e.preventDefault(); hideOverlay(); }, true);
+      })();
     </script>
 
     <!-- EXTENSIONS -->

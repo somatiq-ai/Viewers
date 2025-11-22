@@ -1,9 +1,30 @@
 const bindings = [
   {
     commandName: 'setToolActive',
+    commandOptions: { toolName: 'Pan' },
+    label: 'Pan',
+    keys: ['p'],
+    isEditable: true,
+  },
+  {
+    commandName: 'setToolActive',
+    commandOptions: { toolName: 'WindowLevel' },
+    label: 'Window Level',
+    keys: ['w'],
+    isEditable: true,
+  },
+  {
+    commandName: 'setToolActive',
     commandOptions: { toolName: 'Zoom' },
     label: 'Zoom',
     keys: ['z'],
+    isEditable: true,
+  },
+  {
+    commandName: 'setToolActive',
+    commandOptions: { toolName: 'Length' },
+    label: 'Measurement (Length)',
+    keys: ['m'],
     isEditable: true,
   },
   {

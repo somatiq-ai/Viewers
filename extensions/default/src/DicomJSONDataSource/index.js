@@ -89,16 +89,19 @@ function createDicomJSONApi(dicomJsonConfig) {
 
           series.instances.forEach(instance => {
             const { metadata: naturalizedDicom } = instance;
-            const imageId = getImageId({ instance, config: dicomJsonConfig });
+            const imageId = getImageId({ instance, frame: undefined, config: dicomJsonConfig });
 
             const { query } = qs.parseUrl(instance.url);
 
             // Add imageId specific mapping to this data as the URL isn't necessarily WADO-URI.
+            const frameNumber = query.frame 
+              ? (Array.isArray(query.frame) ? parseInt(query.frame[0]) : parseInt(query.frame))
+              : undefined;
             metadataProvider.addImageIdToUIDs(imageId, {
               StudyInstanceUID,
               SeriesInstanceUID,
               SOPInstanceUID: naturalizedDicom.SOPInstanceUID,
-              frameNumber: query.frame ? parseInt(query.frame) : undefined,
+              frameNumber: frameNumber,
             });
           });
         });
@@ -231,12 +234,49 @@ function createDicomJSONApi(dicomJsonConfig) {
               const obj = {
                 ...modifiedMetadata,
                 url: instance.url,
-                imageId: getImageId({ instance, config: dicomJsonConfig }),
+                imageId: getImageId({ instance, frame: undefined, config: dicomJsonConfig }),
                 ...series,
                 ...study,
               };
               delete obj.instances;
               delete obj.series;
+              
+              // Register metadata for each frame if NumberOfFrames > 1
+              const numberOfFrames = (modifiedMetadata && 'NumberOfFrames' in modifiedMetadata && modifiedMetadata.NumberOfFrames) 
+                ? Number(modifiedMetadata.NumberOfFrames) 
+                : 1;
+              const { StudyInstanceUID, SeriesInstanceUID, SOPInstanceUID } = obj;
+              
+              if (numberOfFrames > 1) {
+                // Register metadata for each frame
+                for (let i = 1; i <= numberOfFrames; i++) {
+                  const frameImageId = getImageId({
+                    instance: { ...instance, metadata: modifiedMetadata },
+                    frame: i,
+                    config: dicomJsonConfig,
+                  });
+                  metadataProvider.addImageIdToUIDs(frameImageId, {
+                    StudyInstanceUID,
+                    SeriesInstanceUID,
+                    SOPInstanceUID,
+                    frameNumber: i,
+                  });
+                }
+              } else {
+                // Register metadata for single frame instance
+                const imageId = getImageId({
+                  instance: { ...instance, metadata: modifiedMetadata },
+                  frame: undefined,
+                  config: dicomJsonConfig,
+                });
+                metadataProvider.addImageIdToUIDs(imageId, {
+                  StudyInstanceUID,
+                  SeriesInstanceUID,
+                  SOPInstanceUID,
+                  frameNumber: undefined,
+                });
+              }
+              
               return obj;
             });
             storeInstances(instances);
@@ -280,24 +320,92 @@ function createDicomJSONApi(dicomJsonConfig) {
       images.forEach(instance => {
         const NumberOfFrames = instance.NumberOfFrames || 1;
         const instances = instanceMap.get(instance.SOPInstanceUID) || [instance];
-        for (let i = 0; i < NumberOfFrames; i++) {
-          const inst = instances[Math.min(i, instances.length - 1)];
-          const imageId =
-            inst?.imageId ||
-            getImageId({
-              instance: inst,
-              frame: NumberOfFrames > 1 ? i : undefined,
-              config: dicomJsonConfig,
+        const SOPInstanceUID = instance.SOPInstanceUID || instances[0]?.metadata?.SOPInstanceUID;
+        
+        if (NumberOfFrames > 2) {
+          for (let i = 1; i <= NumberOfFrames; i++) {
+            const inst = instances[Math.min(i - 1, instances.length - 1)];
+            const frame = i;
+            const imageId =
+              inst?.imageId ||
+              getImageId({
+                instance: inst,
+                frame: frame,
+                config: dicomJsonConfig,
+              });
+            
+            // Register metadata for each frame-specific imageId
+            if (SOPInstanceUID && StudyInstanceUID && SeriesInstanceUID) {
+              metadataProvider.addImageIdToUIDs(imageId, {
+                StudyInstanceUID,
+                SeriesInstanceUID,
+                SOPInstanceUID,
+                frameNumber: frame,
+              });
+            }
+            
+            imageIds.push(imageId);
+          }
+        }
+        else if (NumberOfFrames == 2) {
+          const imageId0 = getImageId({
+            instance: instances[0],
+            frame: 0,
+            config: dicomJsonConfig,
+          });
+          
+          const imageId1 = getImageId({
+            instance: instances[0],
+            frame: 1,
+            config: dicomJsonConfig,
+          });
+          
+          // Register metadata for each frame
+          if (SOPInstanceUID && StudyInstanceUID && SeriesInstanceUID) {
+            metadataProvider.addImageIdToUIDs(imageId0, {
+              StudyInstanceUID,
+              SeriesInstanceUID,
+              SOPInstanceUID,
+              frameNumber: 0,
             });
-          imageIds.push(imageId);
+            
+            metadataProvider.addImageIdToUIDs(imageId1 , {
+              StudyInstanceUID,
+              SeriesInstanceUID,
+              SOPInstanceUID,
+              frameNumber: 1,
+            });
+          }
+          
+          imageIds.push(imageId0);
+          imageIds.push(imageId1);
+        }
+        else {
+          const imageId = getImageId({
+            instance: instances[0],
+            frame: undefined,
+            config: dicomJsonConfig,
+          });
+          
+          // Register metadata for single frame
+          if (SOPInstanceUID && StudyInstanceUID && SeriesInstanceUID) {
+            metadataProvider.addImageIdToUIDs(imageId, {
+              StudyInstanceUID,
+              SeriesInstanceUID,
+              SOPInstanceUID,
+              frameNumber: undefined,
+            });
+          }
+          
+          imageIds.push(imageId); 
         }
       });
 
       return imageIds;
     },
     getImageIdsForInstance({ instance, frame }) {
-      const imageIds = getImageId({ instance, frame });
-      return imageIds;
+      const imageId = getImageId({ instance, frame, config: dicomJsonConfig });
+      return imageId;
     },
     getStudyInstanceUIDs: ({ params, query }) => {
       const url = query.get('url');
